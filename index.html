@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Estudio IA</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f9f9f7;--surface:#ffffff;--surface2:#f3f3f0;
+  --border:#e5e5e0;--border-strong:#d0d0c8;
+  --text:#1a1a18;--text-2:#5a5a55;--text-3:#9a9a92;
+  --accent:#2563eb;--accent-bg:#eff6ff;--accent-text:#1d4ed8;
+  --success:#16a34a;--success-bg:#f0fdf4;
+  --warning:#d97706;--warning-bg:#fffbeb;
+  --danger:#dc2626;--danger-bg:#fef2f2;
+  --radius:8px;--shadow:0 1px 3px rgba(0,0,0,0.08);
+}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;min-height:100vh}
+.app{max-width:860px;margin:0 auto;padding:0 16px 60px}
+.header{padding:20px 0 0;margin-bottom:0}
+.header h1{font-size:18px;font-weight:600}
+.nav{display:flex;gap:2px;border-bottom:1px solid var(--border);margin:16px 0 24px;overflow-x:auto}
+.nav button{padding:8px 14px;border:none;background:transparent;color:var(--text-2);font-size:13px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;font-family:inherit}
+.nav button:hover{color:var(--text)}.nav button.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:500}
+.tab{display:none}.tab.active{display:block}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:12px;box-shadow:var(--shadow)}
+.card.accent{border-color:#bfdbfe;background:var(--accent-bg)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media(max-width:600px){.grid4{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}}
+.stat{background:var(--surface2);border-radius:var(--radius);padding:12px 14px}
+.stat-label{font-size:11px;color:var(--text-3);margin-bottom:2px}
+.stat-value{font-size:24px;font-weight:600}
+.badge{display:inline-block;font-size:11px;padding:2px 9px;border-radius:99px;font-weight:500}
+.badge.easy{background:var(--success-bg);color:var(--success)}
+.badge.medium{background:var(--warning-bg);color:var(--warning)}
+.badge.hard{background:var(--danger-bg);color:var(--danger)}
+.badge.info{background:var(--accent-bg);color:var(--accent-text)}
+.badge.muted{background:var(--surface2);color:var(--text-3)}
+button{font-family:inherit;cursor:pointer}
+.btn{padding:8px 16px;border-radius:var(--radius);border:1px solid var(--border-strong);background:var(--surface);color:var(--text);font-size:13px}
+.btn:hover:not(:disabled){background:var(--surface2)}.btn:disabled{opacity:0.45;cursor:not-allowed}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn.primary:hover:not(:disabled){background:#1d4ed8}
+.btn.danger{background:var(--danger-bg);color:var(--danger);border-color:#fca5a5}
+.btn.sm{padding:5px 11px;font-size:12px}
+label{font-size:12px;color:var(--text-2);display:block;margin-bottom:4px;margin-top:12px}
+input,textarea{width:100%;padding:9px 12px;border:1px solid var(--border-strong);border-radius:var(--radius);background:var(--surface);color:var(--text);font-family:inherit;font-size:13px}
+input:focus,textarea:focus{outline:none;border-color:var(--accent)}
+textarea{min-height:140px;resize:vertical}
+.pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.pill{padding:4px 14px;border-radius:99px;border:1px solid var(--border-strong);background:transparent;color:var(--text-2);font-size:12px;cursor:pointer;font-family:inherit}
+.pill.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.step{padding:8px 0;font-size:13px;border-bottom:1px solid var(--border);color:var(--text-3);display:flex;align-items:center;gap:8px}
+.step.done{color:var(--success)}.step.running{color:var(--text);font-weight:500}
+.spinner{width:13px;height:13px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.progress-bar{background:var(--surface2);border-radius:99px;height:5px;overflow:hidden;margin-bottom:10px}
+.progress-fill{height:100%;border-radius:99px;background:var(--accent);transition:width 0.3s}
+.opt-btn{width:100%;text-align:left;padding:10px 14px;margin-bottom:6px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface2);color:var(--text);font-size:13px;cursor:pointer;font-family:inherit}
+.opt-btn:hover:not(:disabled){border-color:var(--border-strong);background:var(--surface)}
+.opt-btn.correct{background:var(--success-bg);border-color:#86efac;color:var(--success)}
+.opt-btn.wrong{background:var(--danger-bg);border-color:#fca5a5;color:var(--danger)}
+.srow{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:11px 14px;margin-bottom:6px;cursor:pointer}
+.srow:hover{border-color:var(--border-strong);background:var(--surface2)}
+.module-title{font-size:14px;font-weight:600;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.prose{font-size:13px;line-height:1.85;color:var(--text-2);white-space:pre-wrap;word-break:break-word}
+.vis-area{border:1px solid var(--border);border-radius:12px;padding:16px;overflow:auto;min-height:300px;background:var(--surface)}
+.vis-area svg{max-width:100%;height:auto;display:block}
+.auth-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;text-align:center;padding:20px}
+.auth-screen h2{font-size:22px;font-weight:600}
+.auth-screen p{font-size:14px;color:var(--text-2);max-width:360px}
+.notify{position:fixed;bottom:20px;right:20px;padding:10px 16px;border-radius:var(--radius);font-size:13px;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:999}
+.notify.ok{background:var(--success);color:#fff}
+.notify.err{background:var(--danger);color:#fff}
+hr{border:none;border-top:1px solid var(--border);margin:12px 0}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row-between{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.slabel{font-size:11px;font-weight:600;letter-spacing:0.06em;color:var(--text-3);margin-bottom:10px;text-transform:uppercase}
+.empty{text-align:center;padding:2rem;color:var(--text-3);font-size:13px}
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth-screen" class="auth-screen">
+  <div style="font-size:52px">📚</div>
+  <h2>Sistema de Estudio IA</h2>
+  <p>Inicia sesión para acceder a tus estudios desde cualquier dispositivo.</p>
+  <button class="btn primary" onclick="signIn()" style="font-size:15px;padding:12px 28px">Entrar con Google</button>
+  <p style="font-size:11px;color:var(--text-3)">Datos guardados en Supabase · Acceso desde cualquier dispositivo</p>
+</div>
+
+<!-- APP -->
+<div id="main-app" style="display:none">
+<div class="app">
+  <div class="header">
+    <div class="row-between">
+      <div>
+        <h1>📚 Sistema de Estudio IA</h1>
+        <div id="user-email" style="font-size:11px;color:var(--text-3);margin-top:2px"></div>
+      </div>
+      <button class="btn sm" onclick="signOut()">Cerrar sesión</button>
+    </div>
+  </div>
+
+  <nav class="nav">
+    <button class="active" onclick="goTab('home',this)">Inicio</button>
+    <button onclick="goTab('process',this)">Nuevo estudio</button>
+    <button onclick="goTab('synthesis',this)">Síntesis</button>
+    <button onclick="goTab('visual',this)">Visual interactivo</button>
+    <button onclick="goTab('flash',this)">Flashcards</button>
+    <button onclick="goTab('review',this)">Repasar</button>
+    <button onclick="goTab('db',this)">Base de datos</button>
+  </nav>
+
+  <!-- HOME -->
+  <div id="tab-home" class="tab active">
+    <div class="grid4" style="margin-bottom:14px">
+      <div class="stat"><div class="stat-label">Estudios</div><div class="stat-value" id="h-st">0</div></div>
+      <div class="stat"><div class="stat-label">Flashcards</div><div class="stat-value" id="h-fc">0</div></div>
+      <div class="stat"><div class="stat-label">Pendientes hoy</div><div class="stat-value" id="h-pd">0</div></div>
+      <div class="stat"><div class="stat-label">Aciertos</div><div class="stat-value" id="h-ok">0</div></div>
+    </div>
+    <div class="card">
+      <div class="slabel">Cómo funciona</div>
+      <div style="font-size:13px;color:var(--text-2);line-height:1.8">
+        1. <strong>Nuevo estudio</strong> → pega el documento → la IA genera síntesis, mnemotecnias, flashcards y visual interactivo.<br>
+        2. <strong>Visual interactivo</strong> → toca cualquier elemento del diagrama para ver su explicación.<br>
+        3. <strong>Repasar</strong> → repetición espaciada. Tus progresos se guardan en tu cuenta.
+      </div>
+    </div>
+    <div id="home-pd" style="display:none">
+      <div class="row-between" style="margin-bottom:10px">
+        <span style="font-size:14px;font-weight:600">Pendientes hoy</span>
+        <button class="btn primary sm" onclick="goTab('review',null)">Repasar ahora</button>
+      </div>
+      <div id="home-pd-list"></div>
+    </div>
+  </div>
+
+  <!-- NUEVO ESTUDIO -->
+  <div id="tab-process" class="tab">
+    <div class="card">
+      <div class="slabel">Datos del estudio</div>
+      <div class="grid2">
+        <div><label>Nombre</label><input id="p-name" placeholder="Tu nombre"></div>
+        <div><label>Asignatura</label><input id="p-subj" placeholder="Ej: Psicofarmacología"></div>
+      </div>
+      <label>Tema</label><input id="p-topic" placeholder="Ej: Antidepresivos ISRS">
+      <label>API Key de Anthropic</label>
+      <input id="p-apikey" type="password" placeholder="sk-ant-..." autocomplete="off">
+      <p style="font-size:11px;color:var(--text-3);margin-top:4px">Tu API key se guarda solo en este navegador. Nunca se sube a ningún servidor.</p>
+      <label>Intervalo de repaso para cartas falladas</label>
+      <div class="pills">
+        <button class="pill active" data-v="1" onclick="setPill(this)">1 día</button>
+        <button class="pill" data-v="3" onclick="setPill(this)">3 días</button>
+        <button class="pill" data-v="7" onclick="setPill(this)">7 días</button>
+        <button class="pill" data-v="14" onclick="setPill(this)">14 días</button>
+      </div>
+      <label>Contenido del documento</label>
+      <textarea id="p-doc" placeholder="Pega aquí el texto del documento o apuntes que quieres estudiar."></textarea>
+      <div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button class="btn primary" id="btn-go" onclick="startAnalysis()">Analizar documento</button>
+        <span id="p-err" style="font-size:12px;color:var(--danger);display:none"></span>
+      </div>
+    </div>
+    <div id="proc-prog" style="display:none">
+      <div class="card">
+        <div class="slabel">Generando tu estudio</div>
+        <div id="steps-list"></div>
+        <div style="margin-top:10px;font-size:12px;color:var(--text-3)">Esto puede tardar 30-60 segundos...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SÍNTESIS -->
+  <div id="tab-synthesis" class="tab">
+    <div id="syn-empty" class="empty">Procesa un documento en "Nuevo estudio".</div>
+    <div id="syn-body" style="display:none">
+      <div class="row-between" style="margin-bottom:14px">
+        <div>
+          <div id="syn-topic" style="font-size:16px;font-weight:600"></div>
+          <div id="syn-sub" style="font-size:12px;color:var(--text-3);margin-top:2px"></div>
+        </div>
+        <button class="btn sm" onclick="window.print()">🖨 Imprimir</button>
+      </div>
+      <div id="syn-mods"></div>
+    </div>
+  </div>
+
+  <!-- VISUAL -->
+  <div id="tab-visual" class="tab">
+    <div id="vis-empty" class="empty">Procesa un documento en "Nuevo estudio".</div>
+    <div id="vis-body" style="display:none">
+      <div class="row-between" style="margin-bottom:10px">
+        <span style="font-size:15px;font-weight:600" id="vis-topic"></span>
+        <span style="font-size:11px;color:var(--text-3)">Toca cualquier elemento para ver su explicación</span>
+      </div>
+      <div id="vis-area" class="vis-area"></div>
+      <div id="vis-info" style="display:none;margin-top:12px" class="card accent">
+        <div style="font-size:12px;font-weight:600;color:var(--accent-text);margin-bottom:4px" id="vis-info-t"></div>
+        <div style="font-size:13px;color:var(--text-2);line-height:1.7" id="vis-info-b"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLASHCARDS -->
+  <div id="tab-flash" class="tab">
+    <div id="fl-empty" class="empty">Procesa un documento en "Nuevo estudio".</div>
+    <div id="fl-body" style="display:none">
+      <div class="row-between" style="margin-bottom:14px">
+        <div class="row" style="gap:6px" id="fl-badges"></div>
+        <button class="btn primary sm" onclick="goTab('review',null)">Repasar ahora</button>
+      </div>
+      <div id="fl-list"></div>
+    </div>
+  </div>
+
+  <!-- REPASAR -->
+  <div id="tab-review" class="tab">
+    <div id="rv-sel">
+      <div class="slabel">Selecciona estudio</div>
+      <div id="rv-list"></div>
+      <div id="rv-empty" class="empty" style="display:none">Sin estudios guardados.</div>
+    </div>
+    <div id="rv-active" style="display:none">
+      <div class="row-between" style="margin-bottom:10px">
+        <span style="font-size:12px;color:var(--text-3)" id="rv-title"></span>
+        <button class="btn sm" onclick="exitRev()">Salir</button>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="rv-prog"></div></div>
+      <div style="font-size:11px;color:var(--text-3);margin-bottom:14px" id="rv-cnt"></div>
+      <div class="card">
+        <div style="margin-bottom:10px" id="rv-badge-wrap"></div>
+        <div style="font-size:16px;font-weight:500;line-height:1.5;margin-bottom:14px" id="rv-q"></div>
+        <div id="rv-opts"></div>
+        <div id="rv-exp" style="display:none;margin-top:12px;padding:12px;background:var(--surface2);border-radius:var(--radius);font-size:12px;color:var(--text-2);line-height:1.6"></div>
+        <div id="rv-next" style="display:none;margin-top:12px"><button class="btn primary sm" onclick="nextCard()">Siguiente →</button></div>
+      </div>
+    </div>
+    <div id="rv-done" style="display:none;text-align:center;padding:3rem 0">
+      <div style="font-size:48px;margin-bottom:12px">✓</div>
+      <div style="font-size:20px;font-weight:600;margin-bottom:6px">Sesión completada</div>
+      <div class="grid2" style="max-width:280px;margin:16px auto">
+        <div class="stat"><div class="stat-label">Correctas</div><div class="stat-value" style="color:var(--success)" id="done-c"></div></div>
+        <div class="stat"><div class="stat-label">Falladas</div><div class="stat-value" style="color:var(--danger)" id="done-w"></div></div>
+      </div>
+      <div style="font-size:13px;color:var(--text-3);margin-bottom:16px" id="done-msg"></div>
+      <button class="btn primary sm" onclick="exitRev()">Volver</button>
+    </div>
+  </div>
+
+  <!-- BASE DE DATOS -->
+  <div id="tab-db" class="tab">
+    <div class="row-between" style="margin-bottom:14px">
+      <span style="font-size:15px;font-weight:600">Estudios guardados</span>
+      <button class="btn danger sm" onclick="clearAll()">Borrar todo</button>
+    </div>
+    <div id="db-list"></div>
+    <div id="db-empty" class="empty" style="display:none">Sin estudios.</div>
+  </div>
+
+</div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://uomjnjmghfcepfquhllz.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_CNrqjHqhWQtg9_idWV7-Tg_nL9kxTTi';
+const MODEL = 'claude-sonnet-4-6';
+
+const supa = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let G = { studies:[], cur:null, uid:null, intv:1, revQueue:[], revIdx:0, revStudy:null, revC:0, revW:0, revAnswered:false };
+
+// ── AUTH ──────────────────────────────────────────────
+supa.auth.onAuthStateChange((event, session) => {
+  if (session?.user) {
+    G.uid = session.user.id;
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('main-app').style.display = 'block';
+    document.getElementById('user-email').textContent = session.user.email;
+    loadStudies();
+    restoreApiKey();
+  } else {
+    document.getElementById('auth-screen').style.display = 'flex';
+    document.getElementById('main-app').style.display = 'none';
+  }
+});
+
+async function signIn() {
+  const { error } = await supa.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
+  if (error) notify(error.message, true);
+}
+async function signOut() {
+  if (confirm('¿Cerrar sesión?')) await supa.auth.signOut();
+}
+
+// ── DATABASE ──────────────────────────────────────────
+async function loadStudies() {
+  const { data, error } = await supa.from('studies').select('*').eq('user_id', G.uid).order('created_at', { ascending: false });
+  if (error) { notify('Error cargando: ' + error.message, true); return; }
+  G.studies = data || [];
+  G.cur = G.studies[0] || null;
+  refreshHome();
+}
+
+async function saveStudyDB(study) {
+  const payload = { ...study, user_id: G.uid };
+  const { error } = await supa.from('studies').upsert(payload, { onConflict: 'id' });
+  if (error) notify('Error guardando: ' + error.message, true);
+}
+
+async function deleteStudyDB(id) {
+  await supa.from('studies').delete().eq('id', id).eq('user_id', G.uid);
+}
+
+// ── API KEY ───────────────────────────────────────────
+function restoreApiKey() {
+  const k = localStorage.getItem('anthropic_key');
+  if (k) document.getElementById('p-apikey').value = k;
+}
+function getApiKey() {
+  const k = document.getElementById('p-apikey').value.trim();
+  if (k) localStorage.setItem('anthropic_key', k);
+  return k;
+}
+
+// ── NAV ───────────────────────────────────────────────
+function goTab(t, btn) {
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + t).classList.add('active');
+  if (btn) btn.classList.add('active');
+  else { const map={home:0,process:1,synthesis:2,visual:3,flash:4,review:5,db:6}; const btns=document.querySelectorAll('.nav button'); if(map[t]!==undefined)btns[map[t]].classList.add('active'); }
+  if (t==='synthesis') renderSyn();
+  if (t==='visual') renderVis();
+  if (t==='flash') renderFlash();
+  if (t==='review') renderRevSel();
+  if (t==='db') renderDB();
+  if (t==='home') refreshHome();
+}
+
+// ── HOME ──────────────────────────────────────────────
+function refreshHome() {
+  const now = Date.now();
+  const tc = G.studies.reduce((a,s)=>a+(s.cards?.length||0),0);
+  const tp = G.studies.reduce((a,s)=>a+(s.cards?.filter(c=>c.nextReview<=now).length||0),0);
+  const tok = G.studies.reduce((a,s)=>a+(s.cards?.reduce((b,c)=>b+(c.timesCorrect||0),0)||0),0);
+  document.getElementById('h-st').textContent = G.studies.length;
+  document.getElementById('h-fc').textContent = tc;
+  document.getElementById('h-pd').textContent = tp;
+  document.getElementById('h-ok').textContent = tok;
+  const pending = G.studies.filter(s=>s.cards?.some(c=>c.nextReview<=now));
+  const pd = document.getElementById('home-pd');
+  if (pending.length) {
+    pd.style.display = 'block';
+    document.getElementById('home-pd-list').innerHTML = pending.map(s => {
+      const d = s.cards.filter(c=>c.nextReview<=now).length;
+      return `<div class="srow" onclick="goTab('review',null)"><div class="row-between"><span style="font-size:13px;font-weight:500">${e(s.topic)}</span><span class="badge easy">${d} pendientes</span></div><div style="font-size:11px;color:var(--text-3);margin-top:2px">${e(s.subject)} · ${e(s.name)}</div></div>`;
+    }).join('');
+  } else pd.style.display = 'none';
+}
+
+// ── PILLS ─────────────────────────────────────────────
+function setPill(btn) {
+  document.querySelectorAll('.pill').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); G.intv = parseInt(btn.dataset.v);
+}
+
+// ── CLAUDE ────────────────────────────────────────────
+async function callClaude(prompt, apiKey) {
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true' },
+    body: JSON.stringify({ model:MODEL, max_tokens:1000, messages:[{role:'user',content:prompt}] })
+  });
+  const d = await r.json();
+  if (d.error) throw new Error(d.error.message);
+  return d.content.map(c=>c.text||'').join('');
+}
+
+function sec(txt,k) { const m=txt.match(new RegExp(`\\[${k}\\]([\\s\\S]*?)\\[/${k}\\]`)); return m?m[1].trim():''; }
+
+const STEP_LABELS = ['Resumen ejecutivo y mapa de conceptos','Informe integrado y mnemotecnias','Tablas comparativas y síntesis','Flashcards (fácil / media / difícil)','Visual interactivo','Guardando en tu cuenta'];
+
+function setStep(active) {
+  document.getElementById('steps-list').innerHTML = STEP_LABELS.map((lbl,i) => {
+    if (i<active) return `<div class="step done"><span>✓</span>${lbl}</div>`;
+    if (i===active) return `<div class="step running"><span class="spinner"></span>${lbl}</div>`;
+    return `<div class="step"><span style="width:13px;display:inline-block"></span>${lbl}</div>`;
+  }).join('');
+}
+
+function buildP1(doc,t,s){return `Analiza este documento de ${s} sobre "${t}". Responde SOLO con los marcadores exactos.\n[MODULO_0]\nTEMA: ${t}\nASIGNATURA: ${s}\nDENSIDAD: [Baja/Media/Alta]\n[/MODULO_0]\n[MODULO_1]\nResumen ejecutivo 150-200 palabras con los puntos clave más importantes.\n[/MODULO_1]\n[MODULO_2]\nMapa jerárquico con ├─ └─ │, mínimo 12 nodos.\n[/MODULO_2]\nDOCUMENTO:\n${doc.substring(0,3000)}`;}
+function buildP2(doc,t,s){return `Analiza este documento de ${s} sobre "${t}". Responde SOLO con los marcadores.\n[MODULO_3]\nInforme: Definición y contexto, Fundamentos, Desarrollo, Análisis, Conclusiones. Máx 300 palabras.\n[/MODULO_3]\n[MODULO_4]\nMínimo 4 mnemotecnias. Formato: NOMBRE/FÓRMULA/MEMORIZA/CÓMO.\n[/MODULO_4]\nDOCUMENTO:\n${doc.substring(0,3000)}`;}
+function buildP3(doc,t,s){return `Analiza este documento de ${s} sobre "${t}". Responde SOLO con los marcadores.\n[MODULO_5]\nTablas comparativas de pares comparables. Si no hay: "Sin elementos comparables".\n[/MODULO_5]\n[MODULO_8]\nSíntesis: (1) Qué aporta, (2) Qué profundizar, (3) Próximos pasos.\n[/MODULO_8]\nDOCUMENTO:\n${doc.substring(0,3000)}`;}
+function buildP4(doc,t,s){return `Genera exactamente 9 flashcards sobre ${t} (${s}): 3 fáciles, 3 medias, 3 difíciles.\nFormato:\nFLASHCARD [N]\nPREGUNTA: [pregunta]\nDIFICULTAD: Fácil|Media|Difícil\nA) [opción]\nB) [opción]\nC) [opción]\nD) [opción]\nE) [opción]\nRESPUESTA CORRECTA: [letra]\nEXPLICACIÓN: [por qué, máx 40 palabras]\n\nDocumento:\n${doc.substring(0,2500)}`;}
+function buildP5(doc,t,s){return `Genera un diagrama SVG interactivo para aprender ${t} (${s}). DEVUELVE SOLO CÓDIGO SVG sin markdown ni texto extra.\nReglas:\n- Primera línea: <svg viewBox="0 0 600 380" xmlns="http://www.w3.org/2000/svg">\n- Cada nodo clicable: data-title="TITULO" data-desc="DESCRIPCION 1-2 frases"\n- Nodos principales: rect rx="8" fill="#EFF6FF" stroke="#2563EB" stroke-width="1.5"\n- Nodos secundarios: rect rx="6" fill="#F0FDF4" stroke="#16A34A"\n- Texto: font-family="system-ui,sans-serif" font-size="12" fill="#1a1a18" text-anchor="middle"\n- Máx 8 nodos. Título arriba font-size="15" font-weight="600"\nDocumento:\n${doc.substring(0,2000)}`;}
+
+function parseCards(txt, intv) {
+  const cards = [];
+  txt.split(/FLASHCARD\s*\d+/i).filter(b=>b.trim().length>20).forEach(block => {
+    const c = {options:[],timesCorrect:0,timesFailed:0,nextReview:Date.now(),id:String(Date.now()+Math.random()),interval:intv};
+    block.split('\n').forEach(line => {
+      line=line.trim();
+      if(/^PREGUNTA:/i.test(line)) c.question=line.replace(/^PREGUNTA:\s*/i,'');
+      else if(/^DIFICULTAD:/i.test(line)){const d=line.replace(/^DIFICULTAD:\s*/i,'').toLowerCase();c.difficulty=d[0]==='f'?'easy':d[0]==='d'?'hard':'medium';}
+      else if(/^[A-E]\)/i.test(line)) c.options.push(line);
+      else if(/^RESPUESTA CORRECTA:/i.test(line)) c.correct=line.replace(/^RESPUESTA CORRECTA:\s*/i,'').trim().toUpperCase()[0];
+      else if(/^EXPLICACI/i.test(line)) c.explanation=line.replace(/^EXPLICACI[OÓ]N:\s*/i,'');
+    });
+    if(c.question&&c.options.length>=2&&c.correct) cards.push(c);
+  });
+  return cards;
+}
+
+async function startAnalysis() {
+  const name=document.getElementById('p-name').value.trim();
+  const subj=document.getElementById('p-subj').value.trim();
+  const topic=document.getElementById('p-topic').value.trim();
+  const doc=document.getElementById('p-doc').value.trim();
+  const apiKey=getApiKey();
+  const err=document.getElementById('p-err'); err.style.display='none';
+  if(!name||!subj||!topic||!doc){err.textContent='Rellena todos los campos.';err.style.display='inline';return;}
+  if(!apiKey){err.textContent='Introduce tu API key de Anthropic.';err.style.display='inline';return;}
+  document.getElementById('btn-go').disabled=true;
+  document.getElementById('proc-prog').style.display='block';
+  setStep(0);
+  const study={id:String(Date.now()),name,subject:subj,topic,interval:G.intv,created_at:new Date().toISOString(),cards:[],modules:{},svgData:null};
+  try {
+    const r1=await callClaude(buildP1(doc,topic,subj),apiKey);
+    study.modules.m0=sec(r1,'MODULO_0');study.modules.m1=sec(r1,'MODULO_1');study.modules.m2=sec(r1,'MODULO_2');
+    setStep(1);
+    const r2=await callClaude(buildP2(doc,topic,subj),apiKey);
+    study.modules.m3=sec(r2,'MODULO_3');study.modules.m4=sec(r2,'MODULO_4');
+    setStep(2);
+    const r3=await callClaude(buildP3(doc,topic,subj),apiKey);
+    study.modules.m5=sec(r3,'MODULO_5');study.modules.m8=sec(r3,'MODULO_8');
+    setStep(3);
+    const r4=await callClaude(buildP4(doc,topic,subj),apiKey);
+    study.cards=parseCards(r4,G.intv);
+    setStep(4);
+    const r5=await callClaude(buildP5(doc,topic,subj),apiKey);
+    study.svgData=r5.trim().replace(/```[a-z]*/gi,'').replace(/```/g,'').trim();
+    setStep(5);
+    await saveStudyDB(study);
+    G.studies.unshift(study); G.cur=study;
+    document.getElementById('proc-prog').style.display='none';
+    document.getElementById('btn-go').disabled=false;
+    document.getElementById('p-doc').value='';
+    refreshHome();
+    notify('Estudio guardado correctamente');
+    goTab('synthesis',null);
+  } catch(ex) {
+    document.getElementById('proc-prog').style.display='none';
+    document.getElementById('btn-go').disabled=false;
+    err.textContent='Error: '+ex.message; err.style.display='inline';
+    notify(ex.message,true);
+  }
+}
+
+function renderSyn() {
+  const s=G.cur;
+  document.getElementById('syn-empty').style.display=s?'none':'block';
+  document.getElementById('syn-body').style.display=s?'block':'none';
+  if(!s)return;
+  document.getElementById('syn-topic').textContent=s.topic;
+  document.getElementById('syn-sub').textContent=s.subject+' · '+s.name;
+  const mods=[{k:'m0',t:'Módulo 0 — Identificación'},{k:'m1',t:'Módulo 1 — Resumen ejecutivo'},{k:'m2',t:'Módulo 2 — Mapa de conceptos'},{k:'m3',t:'Módulo 3 — Informe integrado'},{k:'m4',t:'Módulo 4 — Mnemotecnias'},{k:'m5',t:'Módulo 5 — Tablas comparativas'},{k:'m8',t:'Módulo 8 — Síntesis de aprendizaje'}];
+  document.getElementById('syn-mods').innerHTML=mods.map(m=>`<div style="margin-bottom:20px"><div class="module-title">${m.t}</div><div class="prose">${e(s.modules?.[m.k]||'—')}</div></div><hr>`).join('');
+}
+
+function renderVis() {
+  const s=G.cur;
+  document.getElementById('vis-empty').style.display=(!s||!s.svgData)?'block':'none';
+  document.getElementById('vis-body').style.display=(s&&s.svgData)?'block':'none';
+  if(!s||!s.svgData)return;
+  document.getElementById('vis-topic').textContent=s.topic;
+  const area=document.getElementById('vis-area');
+  area.innerHTML=s.svgData;
+  document.getElementById('vis-info').style.display='none';
+  area.querySelectorAll('[data-title]').forEach(el=>{
+    el.style.cursor='pointer';
+    el.addEventListener('click',()=>{
+      document.getElementById('vis-info').style.display='block';
+      document.getElementById('vis-info-t').textContent=el.getAttribute('data-title');
+      document.getElementById('vis-info-b').textContent=el.getAttribute('data-desc');
+    });
+  });
+}
+
+function renderFlash() {
+  const s=G.cur; const has=s?.cards?.length;
+  document.getElementById('fl-empty').style.display=has?'none':'block';
+  document.getElementById('fl-body').style.display=has?'block':'none';
+  if(!has)return;
+  const easy=s.cards.filter(c=>c.difficulty==='easy').length;
+  const med=s.cards.filter(c=>c.difficulty==='medium').length;
+  const hard=s.cards.filter(c=>c.difficulty==='hard').length;
+  document.getElementById('fl-badges').innerHTML=`<span class="badge easy">${easy} fáciles</span><span class="badge medium">${med} medias</span><span class="badge hard">${hard} difíciles</span>`;
+  document.getElementById('fl-list').innerHTML=s.cards.map((c,i)=>`<div class="card" style="margin-bottom:8px"><div class="row-between" style="margin-bottom:5px"><span style="font-size:13px;font-weight:500">${i+1}. ${e(c.question||'')}</span><span class="badge ${c.difficulty==='easy'?'easy':c.difficulty==='hard'?'hard':'medium'}">${c.difficulty==='easy'?'Fácil':c.difficulty==='hard'?'Difícil':'Media'}</span></div><div style="font-size:11px;color:var(--text-3)">Correcta: ${e(c.correct||'')}) · ${c.timesCorrect||0} aciertos · ${c.timesFailed||0} fallos</div></div>`).join('');
+}
+
+function renderRevSel() {
+  document.getElementById('rv-sel').style.display='block';
+  document.getElementById('rv-active').style.display='none';
+  document.getElementById('rv-done').style.display='none';
+  const empty=document.getElementById('rv-empty');
+  if(!G.studies.length){document.getElementById('rv-list').innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  const now=Date.now();
+  document.getElementById('rv-list').innerHTML=G.studies.map((s,i)=>{
+    const due=s.cards?.filter(c=>c.nextReview<=now).length||0;
+    return `<div class="srow" onclick="startRev(${i})"><div class="row-between"><span style="font-size:13px;font-weight:500">${e(s.topic)}</span>${due>0?`<span class="badge easy">${due} pendientes</span>`:'<span class="badge muted">al día</span>'}</div><div style="font-size:11px;color:var(--text-3);margin-top:2px">${e(s.subject)} · ${e(s.name)} · ${s.cards?.length||0} cartas</div></div>`;
+  }).join('');
+}
+
+function startRev(idx) {
+  const s=G.studies[idx]; if(!s?.cards)return;
+  const now=Date.now();
+  let q=s.cards.filter(c=>c.nextReview<=now);
+  if(!q.length) q=[...s.cards];
+  G.revQueue=q;G.revIdx=0;G.revStudy=s;G.revC=0;G.revW=0;G.revAnswered=false;
+  document.getElementById('rv-sel').style.display='none';
+  document.getElementById('rv-active').style.display='block';
+  document.getElementById('rv-done').style.display='none';
+  document.getElementById('rv-title').textContent=s.topic+' · '+s.subject;
+  showCard();
+}
+
+function showCard() {
+  const c=G.revQueue[G.revIdx]; const tot=G.revQueue.length;
+  document.getElementById('rv-prog').style.width=Math.round((G.revIdx/tot)*100)+'%';
+  document.getElementById('rv-cnt').textContent=(G.revIdx+1)+' de '+tot;
+  const dl=c.difficulty==='easy'?'easy':c.difficulty==='hard'?'hard':'medium';
+  const dlabel=c.difficulty==='easy'?'Fácil':c.difficulty==='hard'?'Difícil':'Media';
+  document.getElementById('rv-badge-wrap').innerHTML=`<span class="badge ${dl}">${dlabel}</span>`;
+  document.getElementById('rv-q').textContent=c.question||'';
+  document.getElementById('rv-opts').innerHTML=(c.options||[]).map(o=>`<button class="opt-btn" onclick="revAnswer(this,'${o[0].toUpperCase()}')">${e(o)}</button>`).join('');
+  document.getElementById('rv-exp').style.display='none';
+  document.getElementById('rv-next').style.display='none';
+  G.revAnswered=false;
+}
+
+async function revAnswer(btn, letter) {
+  if(G.revAnswered)return; G.revAnswered=true;
+  const c=G.revQueue[G.revIdx]; const ok=(c.correct||'').toUpperCase(); const isOk=letter===ok;
+  const now=Date.now(); const day=86400000;
+  document.querySelectorAll('.opt-btn').forEach(b=>{
+    const l=b.textContent.trim()[0].toUpperCase();
+    if(l===ok)b.classList.add('correct');
+    else if(b===btn&&!isOk)b.classList.add('wrong');
+    b.disabled=true;
+  });
+  const sc=G.revStudy.cards.find(x=>x.id===c.id);
+  if(sc){
+    if(isOk){sc.timesCorrect=(sc.timesCorrect||0)+1;sc.nextReview=now+(G.revStudy.interval*Math.min(sc.timesCorrect,4)*day);G.revC++;}
+    else{sc.timesFailed=(sc.timesFailed||0)+1;sc.nextReview=now+(G.revStudy.interval*day);G.revW++;}
+    await saveStudyDB(G.revStudy);
+  }
+  if(c.explanation){document.getElementById('rv-exp').textContent=c.explanation;document.getElementById('rv-exp').style.display='block';}
+  document.getElementById('rv-next').style.display='block';
+}
+
+function nextCard() {
+  G.revIdx++;
+  if(G.revIdx>=G.revQueue.length){
+    document.getElementById('rv-active').style.display='none';
+    document.getElementById('rv-done').style.display='block';
+    document.getElementById('done-c').textContent=G.revC;
+    document.getElementById('done-w').textContent=G.revW;
+    document.getElementById('done-msg').textContent=G.revW>0?`Las cartas falladas vuelven en ${G.revStudy.interval} día(s).`:'¡Todo correcto! El intervalo aumenta progresivamente.';
+    refreshHome();
+  } else showCard();
+}
+
+function exitRev(){G.revStudy=null;G.revQueue=[];renderRevSel();}
+
+function renderDB() {
+  const empty=document.getElementById('db-empty');
+  if(!G.studies.length){document.getElementById('db-list').innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  document.getElementById('db-list').innerHTML=G.studies.map((s,i)=>{
+    const ok=s.cards?.reduce((a,c)=>a+(c.timesCorrect||0),0)||0;
+    const fail=s.cards?.reduce((a,c)=>a+(c.timesFailed||0),0)||0;
+    return `<div class="card"><div class="row-between"><div><div style="font-size:14px;font-weight:600">${e(s.topic)}</div><div style="font-size:11px;color:var(--text-3);margin-top:2px">${e(s.subject)} · ${e(s.name)} · ${new Date(s.created_at).toLocaleDateString('es-ES')}</div></div><div class="row" style="gap:6px"><button class="btn sm" onclick="loadSt(${i})">Cargar</button><button class="btn danger sm" onclick="delSt(${i})">Eliminar</button></div></div><hr><div style="font-size:12px;color:var(--text-2)">${s.cards?.length||0} cartas · ✓ ${ok} · ✗ ${fail} · Intervalo: ${s.interval}d</div></div>`;
+  }).join('');
+}
+
+function loadSt(i){G.cur=G.studies[i];goTab('synthesis',null);}
+
+async function delSt(i){
+  if(!confirm('¿Eliminar este estudio?'))return;
+  await deleteStudyDB(G.studies[i].id);
+  G.studies.splice(i,1);
+  if(!G.studies.find(s=>s.id===G.cur?.id)) G.cur=G.studies[0]||null;
+  renderDB(); refreshHome();
+}
+
+async function clearAll(){
+  if(!confirm('¿Borrar todos los estudios? No se puede deshacer.'))return;
+  for(const s of G.studies) await deleteStudyDB(s.id);
+  G.studies=[];G.cur=null;renderDB();refreshHome();
+}
+
+function e(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function notify(msg,isErr=false){const el=document.createElement('div');el.className='notify '+(isErr?'err':'ok');el.textContent=msg;document.body.appendChild(el);setTimeout(()=>el.remove(),3500);}
+</script>
+</body>
+</html>
