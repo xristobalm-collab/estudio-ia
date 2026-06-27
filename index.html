@@ -19,7 +19,7 @@
 }
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;min-height:100vh}
 .app{max-width:860px;margin:0 auto;padding:0 16px 60px}
-.header{padding:20px 0 0;margin-bottom:0}
+.header{padding:20px 0 0}
 .header h1{font-size:18px;font-weight:600}
 .nav{display:flex;gap:2px;border-bottom:1px solid var(--border);margin:16px 0 24px;overflow-x:auto}
 .nav button{padding:8px 14px;border:none;background:transparent;color:var(--text-2);font-size:13px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;font-family:inherit}
@@ -69,9 +69,13 @@ textarea{min-height:140px;resize:vertical}
 .prose{font-size:13px;line-height:1.85;color:var(--text-2);white-space:pre-wrap;word-break:break-word}
 .vis-area{border:1px solid var(--border);border-radius:12px;padding:16px;overflow:auto;min-height:300px;background:var(--surface)}
 .vis-area svg{max-width:100%;height:auto;display:block}
-.auth-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;text-align:center;padding:20px}
+.auth-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;text-align:center;padding:20px}
 .auth-screen h2{font-size:22px;font-weight:600}
 .auth-screen p{font-size:14px;color:var(--text-2);max-width:360px}
+.auth-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;width:100%;max-width:360px;box-shadow:var(--shadow)}
+.auth-tabs{display:flex;gap:0;margin-bottom:20px;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.auth-tab{flex:1;padding:8px;border:none;background:transparent;font-family:inherit;font-size:13px;cursor:pointer;color:var(--text-2)}
+.auth-tab.active{background:var(--accent);color:#fff}
 .notify{position:fixed;bottom:20px;right:20px;padding:10px 16px;border-radius:var(--radius);font-size:13px;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:999}
 .notify.ok{background:var(--success);color:#fff}
 .notify.err{background:var(--danger);color:#fff}
@@ -80,6 +84,7 @@ hr{border:none;border-top:1px solid var(--border);margin:12px 0}
 .row-between{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 .slabel{font-size:11px;font-weight:600;letter-spacing:0.06em;color:var(--text-3);margin-bottom:10px;text-transform:uppercase}
 .empty{text-align:center;padding:2rem;color:var(--text-3);font-size:13px}
+.err-msg{font-size:12px;color:var(--danger);margin-top:6px;display:none}
 </style>
 </head>
 <body>
@@ -88,8 +93,29 @@ hr{border:none;border-top:1px solid var(--border);margin:12px 0}
 <div id="auth-screen" class="auth-screen">
   <div style="font-size:52px">📚</div>
   <h2>Sistema de Estudio IA</h2>
-  <p>Inicia sesión para acceder a tus estudios desde cualquier dispositivo.</p>
-  <button class="btn primary" onclick="signIn()" style="font-size:15px;padding:12px 28px">Entrar con Google</button>
+  <p>Accede para guardar tus estudios en cualquier dispositivo.</p>
+  <div class="auth-box">
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="showAuthTab('login',this)">Iniciar sesión</button>
+      <button class="auth-tab" onclick="showAuthTab('register',this)">Registrarse</button>
+    </div>
+    <div id="auth-login">
+      <label>Email</label>
+      <input id="login-email" type="email" placeholder="tu@email.com">
+      <label>Contraseña</label>
+      <input id="login-pass" type="password" placeholder="Tu contraseña">
+      <div class="err-msg" id="login-err"></div>
+      <button class="btn primary" onclick="doLogin()" style="width:100%;margin-top:14px">Entrar</button>
+    </div>
+    <div id="auth-register" style="display:none">
+      <label>Email</label>
+      <input id="reg-email" type="email" placeholder="tu@email.com">
+      <label>Contraseña</label>
+      <input id="reg-pass" type="password" placeholder="Mínimo 6 caracteres">
+      <div class="err-msg" id="reg-err"></div>
+      <button class="btn primary" onclick="doRegister()" style="width:100%;margin-top:14px">Crear cuenta</button>
+    </div>
+  </div>
   <p style="font-size:11px;color:var(--text-3)">Datos guardados en Supabase · Acceso desde cualquier dispositivo</p>
 </div>
 
@@ -270,166 +296,163 @@ hr{border:none;border-top:1px solid var(--border);margin:12px 0}
 const SUPABASE_URL = 'https://uomjnjmghfcepfquhllz.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_CNrqjHqhWQtg9_idWV7-Tg_nL9kxTTi';
 const MODEL = 'claude-sonnet-4-6';
-
 const supa = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-let G = { studies:[], cur:null, uid:null, intv:1, revQueue:[], revIdx:0, revStudy:null, revC:0, revW:0, revAnswered:false };
+let G = {studies:[],cur:null,uid:null,intv:1,revQueue:[],revIdx:0,revStudy:null,revC:0,revW:0,revAnswered:false};
 
 // ── AUTH ──────────────────────────────────────────────
-supa.auth.onAuthStateChange((event, session) => {
-  if (session?.user) {
-    G.uid = session.user.id;
-    document.getElementById('auth-screen').style.display = 'none';
-    document.getElementById('main-app').style.display = 'block';
-    document.getElementById('user-email').textContent = session.user.email;
+function showAuthTab(tab, btn) {
+  document.querySelectorAll('.auth-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('auth-login').style.display = tab==='login'?'block':'none';
+  document.getElementById('auth-register').style.display = tab==='register'?'block':'none';
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const errEl = document.getElementById('login-err');
+  errEl.style.display='none';
+  const {error} = await supa.auth.signInWithPassword({email,password:pass});
+  if(error){errEl.textContent=error.message;errEl.style.display='block';}
+}
+
+async function doRegister() {
+  const email = document.getElementById('reg-email').value.trim();
+  const pass = document.getElementById('reg-pass').value;
+  const errEl = document.getElementById('reg-err');
+  errEl.style.display='none';
+  const {error} = await supa.auth.signUp({email,password:pass});
+  if(error){errEl.textContent=error.message;errEl.style.display='block';}
+  else{errEl.style.color='var(--success)';errEl.textContent='Cuenta creada. Revisa tu email para confirmar.';errEl.style.display='block';}
+}
+
+async function signOut(){if(confirm('¿Cerrar sesión?'))await supa.auth.signOut();}
+
+supa.auth.onAuthStateChange((event,session)=>{
+  if(session?.user){
+    G.uid=session.user.id;
+    document.getElementById('auth-screen').style.display='none';
+    document.getElementById('main-app').style.display='block';
+    document.getElementById('user-email').textContent=session.user.email;
     loadStudies();
     restoreApiKey();
   } else {
-    document.getElementById('auth-screen').style.display = 'flex';
-    document.getElementById('main-app').style.display = 'none';
+    document.getElementById('auth-screen').style.display='flex';
+    document.getElementById('main-app').style.display='none';
   }
 });
 
-async function signIn() {
-  const { error } = await supa.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
-  if (error) notify(error.message, true);
-}
-async function signOut() {
-  if (confirm('¿Cerrar sesión?')) await supa.auth.signOut();
-}
-
 // ── DATABASE ──────────────────────────────────────────
-async function loadStudies() {
-  const { data, error } = await supa.from('studies').select('*').eq('user_id', G.uid).order('created_at', { ascending: false });
-  if (error) { notify('Error cargando: ' + error.message, true); return; }
-  G.studies = data || [];
-  G.cur = G.studies[0] || null;
-  refreshHome();
+async function loadStudies(){
+  const {data,error}=await supa.from('studies').select('*').eq('user_id',G.uid).order('created_at',{ascending:false});
+  if(error){notify('Error cargando: '+error.message,true);return;}
+  G.studies=data||[];G.cur=G.studies[0]||null;refreshHome();
 }
-
-async function saveStudyDB(study) {
-  const payload = { ...study, user_id: G.uid };
-  const { error } = await supa.from('studies').upsert(payload, { onConflict: 'id' });
-  if (error) notify('Error guardando: ' + error.message, true);
+async function saveStudyDB(study){
+  const payload={...study,user_id:G.uid};
+  const {error}=await supa.from('studies').upsert(payload,{onConflict:'id'});
+  if(error)notify('Error guardando: '+error.message,true);
 }
-
-async function deleteStudyDB(id) {
-  await supa.from('studies').delete().eq('id', id).eq('user_id', G.uid);
-}
+async function deleteStudyDB(id){await supa.from('studies').delete().eq('id',id).eq('user_id',G.uid);}
 
 // ── API KEY ───────────────────────────────────────────
-function restoreApiKey() {
-  const k = localStorage.getItem('anthropic_key');
-  if (k) document.getElementById('p-apikey').value = k;
-}
-function getApiKey() {
-  const k = document.getElementById('p-apikey').value.trim();
-  if (k) localStorage.setItem('anthropic_key', k);
-  return k;
-}
+function restoreApiKey(){const k=localStorage.getItem('anthropic_key');if(k)document.getElementById('p-apikey').value=k;}
+function getApiKey(){const k=document.getElementById('p-apikey').value.trim();if(k)localStorage.setItem('anthropic_key',k);return k;}
 
 // ── NAV ───────────────────────────────────────────────
-function goTab(t, btn) {
-  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-' + t).classList.add('active');
-  if (btn) btn.classList.add('active');
-  else { const map={home:0,process:1,synthesis:2,visual:3,flash:4,review:5,db:6}; const btns=document.querySelectorAll('.nav button'); if(map[t]!==undefined)btns[map[t]].classList.add('active'); }
-  if (t==='synthesis') renderSyn();
-  if (t==='visual') renderVis();
-  if (t==='flash') renderFlash();
-  if (t==='review') renderRevSel();
-  if (t==='db') renderDB();
-  if (t==='home') refreshHome();
+function goTab(t,btn){
+  document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+  if(btn)btn.classList.add('active');
+  else{const map={home:0,process:1,synthesis:2,visual:3,flash:4,review:5,db:6};const btns=document.querySelectorAll('.nav button');if(map[t]!==undefined)btns[map[t]].classList.add('active');}
+  if(t==='synthesis')renderSyn();if(t==='visual')renderVis();if(t==='flash')renderFlash();
+  if(t==='review')renderRevSel();if(t==='db')renderDB();if(t==='home')refreshHome();
 }
 
 // ── HOME ──────────────────────────────────────────────
-function refreshHome() {
-  const now = Date.now();
-  const tc = G.studies.reduce((a,s)=>a+(s.cards?.length||0),0);
-  const tp = G.studies.reduce((a,s)=>a+(s.cards?.filter(c=>c.nextReview<=now).length||0),0);
-  const tok = G.studies.reduce((a,s)=>a+(s.cards?.reduce((b,c)=>b+(c.timesCorrect||0),0)||0),0);
-  document.getElementById('h-st').textContent = G.studies.length;
-  document.getElementById('h-fc').textContent = tc;
-  document.getElementById('h-pd').textContent = tp;
-  document.getElementById('h-ok').textContent = tok;
-  const pending = G.studies.filter(s=>s.cards?.some(c=>c.nextReview<=now));
-  const pd = document.getElementById('home-pd');
-  if (pending.length) {
-    pd.style.display = 'block';
-    document.getElementById('home-pd-list').innerHTML = pending.map(s => {
-      const d = s.cards.filter(c=>c.nextReview<=now).length;
+function refreshHome(){
+  const now=Date.now();
+  const tc=G.studies.reduce((a,s)=>a+(s.cards?.length||0),0);
+  const tp=G.studies.reduce((a,s)=>a+(s.cards?.filter(c=>c.nextReview<=now).length||0),0);
+  const tok=G.studies.reduce((a,s)=>a+(s.cards?.reduce((b,c)=>b+(c.timesCorrect||0),0)||0),0);
+  document.getElementById('h-st').textContent=G.studies.length;
+  document.getElementById('h-fc').textContent=tc;
+  document.getElementById('h-pd').textContent=tp;
+  document.getElementById('h-ok').textContent=tok;
+  const pending=G.studies.filter(s=>s.cards?.some(c=>c.nextReview<=now));
+  const pd=document.getElementById('home-pd');
+  if(pending.length){
+    pd.style.display='block';
+    document.getElementById('home-pd-list').innerHTML=pending.map(s=>{
+      const d=s.cards.filter(c=>c.nextReview<=now).length;
       return `<div class="srow" onclick="goTab('review',null)"><div class="row-between"><span style="font-size:13px;font-weight:500">${e(s.topic)}</span><span class="badge easy">${d} pendientes</span></div><div style="font-size:11px;color:var(--text-3);margin-top:2px">${e(s.subject)} · ${e(s.name)}</div></div>`;
     }).join('');
-  } else pd.style.display = 'none';
+  } else pd.style.display='none';
 }
 
-// ── PILLS ─────────────────────────────────────────────
-function setPill(btn) {
-  document.querySelectorAll('.pill').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active'); G.intv = parseInt(btn.dataset.v);
-}
+function setPill(btn){document.querySelectorAll('.pill').forEach(b=>b.classList.remove('active'));btn.classList.add('active');G.intv=parseInt(btn.dataset.v);}
 
 // ── CLAUDE ────────────────────────────────────────────
-async function callClaude(prompt, apiKey) {
-  const r = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true' },
-    body: JSON.stringify({ model:MODEL, max_tokens:1000, messages:[{role:'user',content:prompt}] })
+async function callClaude(prompt,apiKey){
+  const r=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:MODEL,max_tokens:1000,messages:[{role:'user',content:prompt}]})
   });
-  const d = await r.json();
-  if (d.error) throw new Error(d.error.message);
+  const d=await r.json();if(d.error)throw new Error(d.error.message);
   return d.content.map(c=>c.text||'').join('');
 }
 
-function sec(txt,k) { const m=txt.match(new RegExp(`\\[${k}\\]([\\s\\S]*?)\\[/${k}\\]`)); return m?m[1].trim():''; }
+function sec(txt,k){const m=txt.match(new RegExp(`\\[${k}\\]([\\s\\S]*?)\\[/${k}\\]`));return m?m[1].trim():'';}
 
-const STEP_LABELS = ['Resumen ejecutivo y mapa de conceptos','Informe integrado y mnemotecnias','Tablas comparativas y síntesis','Flashcards (fácil / media / difícil)','Visual interactivo','Guardando en tu cuenta'];
+const STEP_LABELS=['Resumen ejecutivo y mapa de conceptos','Informe integrado y mnemotecnias','Tablas comparativas y síntesis','Flashcards (fácil / media / difícil)','Visual interactivo','Guardando en tu cuenta'];
 
-function setStep(active) {
-  document.getElementById('steps-list').innerHTML = STEP_LABELS.map((lbl,i) => {
-    if (i<active) return `<div class="step done"><span>✓</span>${lbl}</div>`;
-    if (i===active) return `<div class="step running"><span class="spinner"></span>${lbl}</div>`;
+function setStep(active){
+  document.getElementById('steps-list').innerHTML=STEP_LABELS.map((lbl,i)=>{
+    if(i<active)return `<div class="step done"><span>✓</span>${lbl}</div>`;
+    if(i===active)return `<div class="step running"><span class="spinner"></span>${lbl}</div>`;
     return `<div class="step"><span style="width:13px;display:inline-block"></span>${lbl}</div>`;
   }).join('');
 }
 
-function buildP1(doc,t,s){return `Analiza este documento de ${s} sobre "${t}". Responde SOLO con los marcadores exactos.\n[MODULO_0]\nTEMA: ${t}\nASIGNATURA: ${s}\nDENSIDAD: [Baja/Media/Alta]\n[/MODULO_0]\n[MODULO_1]\nResumen ejecutivo 150-200 palabras con los puntos clave más importantes.\n[/MODULO_1]\n[MODULO_2]\nMapa jerárquico con ├─ └─ │, mínimo 12 nodos.\n[/MODULO_2]\nDOCUMENTO:\n${doc.substring(0,3000)}`;}
-function buildP2(doc,t,s){return `Analiza este documento de ${s} sobre "${t}". Responde SOLO con los marcadores.\n[MODULO_3]\nInforme: Definición y contexto, Fundamentos, Desarrollo, Análisis, Conclusiones. Máx 300 palabras.\n[/MODULO_3]\n[MODULO_4]\nMínimo 4 mnemotecnias. Formato: NOMBRE/FÓRMULA/MEMORIZA/CÓMO.\n[/MODULO_4]\nDOCUMENTO:\n${doc.substring(0,3000)}`;}
-function buildP3(doc,t,s){return `Analiza este documento de ${s} sobre "${t}". Responde SOLO con los marcadores.\n[MODULO_5]\nTablas comparativas de pares comparables. Si no hay: "Sin elementos comparables".\n[/MODULO_5]\n[MODULO_8]\nSíntesis: (1) Qué aporta, (2) Qué profundizar, (3) Próximos pasos.\n[/MODULO_8]\nDOCUMENTO:\n${doc.substring(0,3000)}`;}
-function buildP4(doc,t,s){return `Genera exactamente 9 flashcards sobre ${t} (${s}): 3 fáciles, 3 medias, 3 difíciles.\nFormato:\nFLASHCARD [N]\nPREGUNTA: [pregunta]\nDIFICULTAD: Fácil|Media|Difícil\nA) [opción]\nB) [opción]\nC) [opción]\nD) [opción]\nE) [opción]\nRESPUESTA CORRECTA: [letra]\nEXPLICACIÓN: [por qué, máx 40 palabras]\n\nDocumento:\n${doc.substring(0,2500)}`;}
-function buildP5(doc,t,s){return `Genera un diagrama SVG interactivo para aprender ${t} (${s}). DEVUELVE SOLO CÓDIGO SVG sin markdown ni texto extra.\nReglas:\n- Primera línea: <svg viewBox="0 0 600 380" xmlns="http://www.w3.org/2000/svg">\n- Cada nodo clicable: data-title="TITULO" data-desc="DESCRIPCION 1-2 frases"\n- Nodos principales: rect rx="8" fill="#EFF6FF" stroke="#2563EB" stroke-width="1.5"\n- Nodos secundarios: rect rx="6" fill="#F0FDF4" stroke="#16A34A"\n- Texto: font-family="system-ui,sans-serif" font-size="12" fill="#1a1a18" text-anchor="middle"\n- Máx 8 nodos. Título arriba font-size="15" font-weight="600"\nDocumento:\n${doc.substring(0,2000)}`;}
+function buildP1(doc,t,s){return `Analiza este documento de ${s} sobre "${t}". Responde SOLO con los marcadores.\n[MODULO_0]\nTEMA: ${t}\nASIGNATURA: ${s}\nDENSIDAD: [Baja/Media/Alta]\n[/MODULO_0]\n[MODULO_1]\nResumen ejecutivo 150-200 palabras con los puntos clave.\n[/MODULO_1]\n[MODULO_2]\nMapa jerárquico con ├─ └─ │, mínimo 12 nodos.\n[/MODULO_2]\nDOCUMENTO:\n${doc.substring(0,3000)}`;}
+function buildP2(doc,t,s){return `Analiza este documento de ${s} sobre "${t}". Responde SOLO con los marcadores.\n[MODULO_3]\nInforme: Definición, Fundamentos, Desarrollo, Análisis, Conclusiones. Máx 300 palabras.\n[/MODULO_3]\n[MODULO_4]\nMínimo 4 mnemotecnias. Formato: NOMBRE/FÓRMULA/MEMORIZA/CÓMO.\n[/MODULO_4]\nDOCUMENTO:\n${doc.substring(0,3000)}`;}
+function buildP3(doc,t,s){return `Analiza este documento de ${s} sobre "${t}". Responde SOLO con los marcadores.\n[MODULO_5]\nTablas comparativas. Si no hay: "Sin elementos comparables".\n[/MODULO_5]\n[MODULO_8]\nSíntesis: (1) Qué aporta, (2) Qué profundizar, (3) Próximos pasos.\n[/MODULO_8]\nDOCUMENTO:\n${doc.substring(0,3000)}`;}
+function buildP4(doc,t,s){return `Genera 9 flashcards sobre ${t} (${s}): 3 fáciles, 3 medias, 3 difíciles.\nFormato:\nFLASHCARD [N]\nPREGUNTA: [pregunta]\nDIFICULTAD: Fácil|Media|Difícil\nA) [opción]\nB) [opción]\nC) [opción]\nD) [opción]\nE) [opción]\nRESPUESTA CORRECTA: [letra]\nEXPLICACIÓN: [por qué, máx 40 palabras]\n\nDocumento:\n${doc.substring(0,2500)}`;}
+function buildP5(doc,t,s){return `Genera SVG interactivo para aprender ${t} (${s}). SOLO CÓDIGO SVG SIN NADA MÁS.\n- Primera línea: <svg viewBox="0 0 600 380" xmlns="http://www.w3.org/2000/svg">\n- Nodos clicables: data-title="TITULO" data-desc="DESCRIPCION 1-2 frases"\n- Nodos principales: rect rx="8" fill="#EFF6FF" stroke="#2563EB" stroke-width="1.5"\n- Nodos secundarios: rect rx="6" fill="#F0FDF4" stroke="#16A34A"\n- Texto: font-family="system-ui,sans-serif" font-size="12" fill="#1a1a18" text-anchor="middle"\n- Máx 8 nodos. Título arriba font-size="15" font-weight="600"\nDocumento:\n${doc.substring(0,2000)}`;}
 
-function parseCards(txt, intv) {
-  const cards = [];
-  txt.split(/FLASHCARD\s*\d+/i).filter(b=>b.trim().length>20).forEach(block => {
-    const c = {options:[],timesCorrect:0,timesFailed:0,nextReview:Date.now(),id:String(Date.now()+Math.random()),interval:intv};
-    block.split('\n').forEach(line => {
+function parseCards(txt,intv){
+  const cards=[];
+  txt.split(/FLASHCARD\s*\d+/i).filter(b=>b.trim().length>20).forEach(block=>{
+    const c={options:[],timesCorrect:0,timesFailed:0,nextReview:Date.now(),id:String(Date.now()+Math.random()),interval:intv};
+    block.split('\n').forEach(line=>{
       line=line.trim();
-      if(/^PREGUNTA:/i.test(line)) c.question=line.replace(/^PREGUNTA:\s*/i,'');
+      if(/^PREGUNTA:/i.test(line))c.question=line.replace(/^PREGUNTA:\s*/i,'');
       else if(/^DIFICULTAD:/i.test(line)){const d=line.replace(/^DIFICULTAD:\s*/i,'').toLowerCase();c.difficulty=d[0]==='f'?'easy':d[0]==='d'?'hard':'medium';}
-      else if(/^[A-E]\)/i.test(line)) c.options.push(line);
-      else if(/^RESPUESTA CORRECTA:/i.test(line)) c.correct=line.replace(/^RESPUESTA CORRECTA:\s*/i,'').trim().toUpperCase()[0];
-      else if(/^EXPLICACI/i.test(line)) c.explanation=line.replace(/^EXPLICACI[OÓ]N:\s*/i,'');
+      else if(/^[A-E]\)/i.test(line))c.options.push(line);
+      else if(/^RESPUESTA CORRECTA:/i.test(line))c.correct=line.replace(/^RESPUESTA CORRECTA:\s*/i,'').trim().toUpperCase()[0];
+      else if(/^EXPLICACI/i.test(line))c.explanation=line.replace(/^EXPLICACI[OÓ]N:\s*/i,'');
     });
-    if(c.question&&c.options.length>=2&&c.correct) cards.push(c);
+    if(c.question&&c.options.length>=2&&c.correct)cards.push(c);
   });
   return cards;
 }
 
-async function startAnalysis() {
+async function startAnalysis(){
   const name=document.getElementById('p-name').value.trim();
   const subj=document.getElementById('p-subj').value.trim();
   const topic=document.getElementById('p-topic').value.trim();
   const doc=document.getElementById('p-doc').value.trim();
   const apiKey=getApiKey();
-  const err=document.getElementById('p-err'); err.style.display='none';
+  const err=document.getElementById('p-err');err.style.display='none';
   if(!name||!subj||!topic||!doc){err.textContent='Rellena todos los campos.';err.style.display='inline';return;}
   if(!apiKey){err.textContent='Introduce tu API key de Anthropic.';err.style.display='inline';return;}
   document.getElementById('btn-go').disabled=true;
   document.getElementById('proc-prog').style.display='block';
   setStep(0);
   const study={id:String(Date.now()),name,subject:subj,topic,interval:G.intv,created_at:new Date().toISOString(),cards:[],modules:{},svgData:null};
-  try {
+  try{
     const r1=await callClaude(buildP1(doc,topic,subj),apiKey);
     study.modules.m0=sec(r1,'MODULO_0');study.modules.m1=sec(r1,'MODULO_1');study.modules.m2=sec(r1,'MODULO_2');
     setStep(1);
@@ -446,22 +469,21 @@ async function startAnalysis() {
     study.svgData=r5.trim().replace(/```[a-z]*/gi,'').replace(/```/g,'').trim();
     setStep(5);
     await saveStudyDB(study);
-    G.studies.unshift(study); G.cur=study;
+    G.studies.unshift(study);G.cur=study;
     document.getElementById('proc-prog').style.display='none';
     document.getElementById('btn-go').disabled=false;
     document.getElementById('p-doc').value='';
-    refreshHome();
-    notify('Estudio guardado correctamente');
+    refreshHome();notify('Estudio guardado correctamente');
     goTab('synthesis',null);
-  } catch(ex) {
+  }catch(ex){
     document.getElementById('proc-prog').style.display='none';
     document.getElementById('btn-go').disabled=false;
-    err.textContent='Error: '+ex.message; err.style.display='inline';
+    err.textContent='Error: '+ex.message;err.style.display='inline';
     notify(ex.message,true);
   }
 }
 
-function renderSyn() {
+function renderSyn(){
   const s=G.cur;
   document.getElementById('syn-empty').style.display=s?'none':'block';
   document.getElementById('syn-body').style.display=s?'block':'none';
@@ -472,7 +494,7 @@ function renderSyn() {
   document.getElementById('syn-mods').innerHTML=mods.map(m=>`<div style="margin-bottom:20px"><div class="module-title">${m.t}</div><div class="prose">${e(s.modules?.[m.k]||'—')}</div></div><hr>`).join('');
 }
 
-function renderVis() {
+function renderVis(){
   const s=G.cur;
   document.getElementById('vis-empty').style.display=(!s||!s.svgData)?'block':'none';
   document.getElementById('vis-body').style.display=(s&&s.svgData)?'block':'none';
@@ -491,8 +513,8 @@ function renderVis() {
   });
 }
 
-function renderFlash() {
-  const s=G.cur; const has=s?.cards?.length;
+function renderFlash(){
+  const s=G.cur;const has=s?.cards?.length;
   document.getElementById('fl-empty').style.display=has?'none':'block';
   document.getElementById('fl-body').style.display=has?'block':'none';
   if(!has)return;
@@ -503,7 +525,7 @@ function renderFlash() {
   document.getElementById('fl-list').innerHTML=s.cards.map((c,i)=>`<div class="card" style="margin-bottom:8px"><div class="row-between" style="margin-bottom:5px"><span style="font-size:13px;font-weight:500">${i+1}. ${e(c.question||'')}</span><span class="badge ${c.difficulty==='easy'?'easy':c.difficulty==='hard'?'hard':'medium'}">${c.difficulty==='easy'?'Fácil':c.difficulty==='hard'?'Difícil':'Media'}</span></div><div style="font-size:11px;color:var(--text-3)">Correcta: ${e(c.correct||'')}) · ${c.timesCorrect||0} aciertos · ${c.timesFailed||0} fallos</div></div>`).join('');
 }
 
-function renderRevSel() {
+function renderRevSel(){
   document.getElementById('rv-sel').style.display='block';
   document.getElementById('rv-active').style.display='none';
   document.getElementById('rv-done').style.display='none';
@@ -517,11 +539,11 @@ function renderRevSel() {
   }).join('');
 }
 
-function startRev(idx) {
-  const s=G.studies[idx]; if(!s?.cards)return;
+function startRev(idx){
+  const s=G.studies[idx];if(!s?.cards)return;
   const now=Date.now();
   let q=s.cards.filter(c=>c.nextReview<=now);
-  if(!q.length) q=[...s.cards];
+  if(!q.length)q=[...s.cards];
   G.revQueue=q;G.revIdx=0;G.revStudy=s;G.revC=0;G.revW=0;G.revAnswered=false;
   document.getElementById('rv-sel').style.display='none';
   document.getElementById('rv-active').style.display='block';
@@ -530,8 +552,8 @@ function startRev(idx) {
   showCard();
 }
 
-function showCard() {
-  const c=G.revQueue[G.revIdx]; const tot=G.revQueue.length;
+function showCard(){
+  const c=G.revQueue[G.revIdx];const tot=G.revQueue.length;
   document.getElementById('rv-prog').style.width=Math.round((G.revIdx/tot)*100)+'%';
   document.getElementById('rv-cnt').textContent=(G.revIdx+1)+' de '+tot;
   const dl=c.difficulty==='easy'?'easy':c.difficulty==='hard'?'hard':'medium';
@@ -544,14 +566,13 @@ function showCard() {
   G.revAnswered=false;
 }
 
-async function revAnswer(btn, letter) {
-  if(G.revAnswered)return; G.revAnswered=true;
-  const c=G.revQueue[G.revIdx]; const ok=(c.correct||'').toUpperCase(); const isOk=letter===ok;
-  const now=Date.now(); const day=86400000;
+async function revAnswer(btn,letter){
+  if(G.revAnswered)return;G.revAnswered=true;
+  const c=G.revQueue[G.revIdx];const ok=(c.correct||'').toUpperCase();const isOk=letter===ok;
+  const now=Date.now();const day=86400000;
   document.querySelectorAll('.opt-btn').forEach(b=>{
     const l=b.textContent.trim()[0].toUpperCase();
-    if(l===ok)b.classList.add('correct');
-    else if(b===btn&&!isOk)b.classList.add('wrong');
+    if(l===ok)b.classList.add('correct');else if(b===btn&&!isOk)b.classList.add('wrong');
     b.disabled=true;
   });
   const sc=G.revStudy.cards.find(x=>x.id===c.id);
@@ -564,7 +585,7 @@ async function revAnswer(btn, letter) {
   document.getElementById('rv-next').style.display='block';
 }
 
-function nextCard() {
+function nextCard(){
   G.revIdx++;
   if(G.revIdx>=G.revQueue.length){
     document.getElementById('rv-active').style.display='none';
@@ -578,7 +599,7 @@ function nextCard() {
 
 function exitRev(){G.revStudy=null;G.revQueue=[];renderRevSel();}
 
-function renderDB() {
+function renderDB(){
   const empty=document.getElementById('db-empty');
   if(!G.studies.length){document.getElementById('db-list').innerHTML='';empty.style.display='block';return;}
   empty.style.display='none';
@@ -595,13 +616,13 @@ async function delSt(i){
   if(!confirm('¿Eliminar este estudio?'))return;
   await deleteStudyDB(G.studies[i].id);
   G.studies.splice(i,1);
-  if(!G.studies.find(s=>s.id===G.cur?.id)) G.cur=G.studies[0]||null;
-  renderDB(); refreshHome();
+  if(!G.studies.find(s=>s.id===G.cur?.id))G.cur=G.studies[0]||null;
+  renderDB();refreshHome();
 }
 
 async function clearAll(){
   if(!confirm('¿Borrar todos los estudios? No se puede deshacer.'))return;
-  for(const s of G.studies) await deleteStudyDB(s.id);
+  for(const s of G.studies)await deleteStudyDB(s.id);
   G.studies=[];G.cur=null;renderDB();refreshHome();
 }
 
