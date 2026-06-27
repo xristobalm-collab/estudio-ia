@@ -20,7 +20,6 @@
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;min-height:100vh}
 .app{max-width:860px;margin:0 auto;padding:0 16px 60px}
 .header{padding:20px 0 0}
-.header h1{font-size:18px;font-weight:600}
 .nav{display:flex;gap:2px;border-bottom:1px solid var(--border);margin:16px 0 24px;overflow-x:auto}
 .nav button{padding:8px 14px;border:none;background:transparent;color:var(--text-2);font-size:13px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;font-family:inherit}
 .nav button:hover{color:var(--text)}.nav button.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:500}
@@ -65,13 +64,18 @@ textarea{min-height:140px;resize:vertical}
 .opt-btn.wrong{background:var(--danger-bg);border-color:#fca5a5;color:var(--danger)}
 .srow{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:11px 14px;margin-bottom:6px;cursor:pointer}
 .srow:hover{border-color:var(--border-strong);background:var(--surface2)}
-.module-title{font-size:14px;font-weight:600;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
-.prose{font-size:13px;line-height:1.85;color:var(--text-2);white-space:pre-wrap;word-break:break-word}
+.module-title{font-size:15px;font-weight:600;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid var(--border);color:var(--accent-text)}
+.prose{font-size:13px;line-height:1.9;color:var(--text-2);word-break:break-word}
+.prose p{margin-bottom:8px}
+.prose ul{margin:8px 0 8px 20px}
+.prose li{margin-bottom:4px}
+.fund{color:#dc2626;font-weight:700}
+.imp{color:#2563eb;font-weight:700}
+.bold{font-weight:700}
 .vis-area{border:1px solid var(--border);border-radius:12px;padding:16px;overflow:auto;min-height:300px;background:var(--surface)}
 .vis-area svg{max-width:100%;height:auto;display:block}
 .auth-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;text-align:center;padding:20px}
 .auth-screen h2{font-size:22px;font-weight:600}
-.auth-screen p{font-size:14px;color:var(--text-2);max-width:360px}
 .auth-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;width:100%;max-width:360px;box-shadow:var(--shadow)}
 .auth-tabs{display:flex;gap:0;margin-bottom:20px;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
 .auth-tab{flex:1;padding:8px;border:none;background:transparent;font-family:inherit;font-size:13px;cursor:pointer;color:var(--text-2)}
@@ -85,11 +89,12 @@ hr{border:none;border-top:1px solid var(--border);margin:12px 0}
 .slabel{font-size:11px;font-weight:600;letter-spacing:0.06em;color:var(--text-3);margin-bottom:10px;text-transform:uppercase}
 .empty{text-align:center;padding:2rem;color:var(--text-3);font-size:13px}
 .err-msg{font-size:12px;color:var(--danger);margin-top:6px;display:none}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px;font-size:12px}
+.legend span{display:flex;align-items:center;gap:4px}
 </style>
 </head>
 <body>
 
-<!-- AUTH -->
 <div id="auth-screen" class="auth-screen">
   <div style="font-size:52px">📚</div>
   <h2>Sistema de Estudio IA</h2>
@@ -101,17 +106,17 @@ hr{border:none;border-top:1px solid var(--border);margin:12px 0}
     </div>
     <div id="auth-login">
       <label>Email</label>
-      <input id="login-email" type="email" placeholder="tu@email.com">
+      <input id="login-email" type="email" placeholder="tu@email.com" autocomplete="email">
       <label>Contraseña</label>
-      <input id="login-pass" type="password" placeholder="Tu contraseña">
+      <input id="login-pass" type="password" placeholder="Tu contraseña" autocomplete="current-password">
       <div class="err-msg" id="login-err"></div>
       <button class="btn primary" onclick="doLogin()" style="width:100%;margin-top:14px">Entrar</button>
     </div>
     <div id="auth-register" style="display:none">
       <label>Email</label>
-      <input id="reg-email" type="email" placeholder="tu@email.com">
+      <input id="reg-email" type="email" placeholder="tu@email.com" autocomplete="email">
       <label>Contraseña</label>
-      <input id="reg-pass" type="password" placeholder="Mínimo 6 caracteres">
+      <input id="reg-pass" type="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
       <div class="err-msg" id="reg-err"></div>
       <button class="btn primary" onclick="doRegister()" style="width:100%;margin-top:14px">Crear cuenta</button>
     </div>
@@ -119,13 +124,12 @@ hr{border:none;border-top:1px solid var(--border);margin:12px 0}
   <p style="font-size:11px;color:var(--text-3)">Datos guardados en Supabase · Acceso desde cualquier dispositivo</p>
 </div>
 
-<!-- APP -->
 <div id="main-app" style="display:none">
 <div class="app">
   <div class="header">
     <div class="row-between">
       <div>
-        <h1>📚 Sistema de Estudio IA</h1>
+        <h1 style="font-size:18px;font-weight:600">📚 Sistema de Estudio IA</h1>
         <div id="user-email" style="font-size:11px;color:var(--text-3);margin-top:2px"></div>
       </div>
       <button class="btn sm" onclick="signOut()">Cerrar sesión</button>
@@ -142,7 +146,6 @@ hr{border:none;border-top:1px solid var(--border);margin:12px 0}
     <button onclick="goTab('db',this)">Base de datos</button>
   </nav>
 
-  <!-- HOME -->
   <div id="tab-home" class="tab active">
     <div class="grid4" style="margin-bottom:14px">
       <div class="stat"><div class="stat-label">Estudios</div><div class="stat-value" id="h-st">0</div></div>
@@ -153,9 +156,14 @@ hr{border:none;border-top:1px solid var(--border);margin:12px 0}
     <div class="card">
       <div class="slabel">Cómo funciona</div>
       <div style="font-size:13px;color:var(--text-2);line-height:1.8">
-        1. <strong>Nuevo estudio</strong> → pega el documento → la IA genera síntesis, mnemotecnias, flashcards y visual interactivo.<br>
+        1. <strong>Nuevo estudio</strong> → pega el documento → la IA genera síntesis completa, flashcards y visual interactivo.<br>
         2. <strong>Visual interactivo</strong> → toca cualquier elemento del diagrama para ver su explicación.<br>
         3. <strong>Repasar</strong> → repetición espaciada. Tus progresos se guardan en tu cuenta.
+      </div>
+      <div class="legend" style="margin-top:12px">
+        <span><b class="fund">■ Rojo</b> = Concepto fundamental</span>
+        <span><b class="imp">■ Azul</b> = Concepto importante</span>
+        <span><b class="bold">■ Negrita</b> = Concepto relevante</span>
       </div>
     </div>
     <div id="home-pd" style="display:none">
@@ -167,18 +175,17 @@ hr{border:none;border-top:1px solid var(--border);margin:12px 0}
     </div>
   </div>
 
-  <!-- NUEVO ESTUDIO -->
   <div id="tab-process" class="tab">
     <div class="card">
       <div class="slabel">Datos del estudio</div>
       <div class="grid2">
-        <div><label>Nombre</label><input id="p-name" placeholder="Tu nombre"></div>
-        <div><label>Asignatura</label><input id="p-subj" placeholder="Ej: Psicofarmacología"></div>
+        <div><label>Nombre</label><input id="p-name" placeholder="Tu nombre" autocomplete="off"></div>
+        <div><label>Asignatura</label><input id="p-subj" placeholder="Ej: Psicofarmacología" autocomplete="off"></div>
       </div>
-      <label>Tema</label><input id="p-topic" placeholder="Ej: Antidepresivos ISRS">
+      <label>Tema</label><input id="p-topic" placeholder="Ej: Antidepresivos ISRS" autocomplete="off">
       <label>API Key de Anthropic</label>
       <input id="p-apikey" type="password" placeholder="sk-ant-..." autocomplete="off">
-      <p style="font-size:11px;color:var(--text-3);margin-top:4px">Tu API key se guarda solo en este navegador. Nunca se sube a ningún servidor.</p>
+      <p style="font-size:11px;color:var(--text-3);margin-top:4px">Tu API key se guarda solo en este navegador. Obtenerla en: console.anthropic.com/settings/keys</p>
       <label>Intervalo de repaso para cartas falladas</label>
       <div class="pills">
         <button class="pill active" data-v="1" onclick="setPill(this)">1 día</button>
@@ -187,7 +194,7 @@ hr{border:none;border-top:1px solid var(--border);margin:12px 0}
         <button class="pill" data-v="14" onclick="setPill(this)">14 días</button>
       </div>
       <label>Contenido del documento</label>
-      <textarea id="p-doc" placeholder="Pega aquí el texto del documento o apuntes que quieres estudiar."></textarea>
+      <textarea id="p-doc" placeholder="Pega aquí el texto del documento o apuntes que quieres estudiar." style="min-height:200px"></textarea>
       <div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <button class="btn primary" id="btn-go" onclick="startAnalysis()">Analizar documento</button>
         <span id="p-err" style="font-size:12px;color:var(--danger);display:none"></span>
@@ -202,7 +209,6 @@ hr{border:none;border-top:1px solid var(--border);margin:12px 0}
     </div>
   </div>
 
-  <!-- SÍNTESIS -->
   <div id="tab-synthesis" class="tab">
     <div id="syn-empty" class="empty">Procesa un documento en "Nuevo estudio".</div>
     <div id="syn-body" style="display:none">
@@ -213,11 +219,15 @@ hr{border:none;border-top:1px solid var(--border);margin:12px 0}
         </div>
         <button class="btn sm" onclick="window.print()">🖨 Imprimir</button>
       </div>
+      <div class="legend">
+        <span><b class="fund">■</b> Fundamental</span>
+        <span><b class="imp">■</b> Importante</span>
+        <span><b class="bold">■</b> Relevante</span>
+      </div>
       <div id="syn-mods"></div>
     </div>
   </div>
 
-  <!-- VISUAL -->
   <div id="tab-visual" class="tab">
     <div id="vis-empty" class="empty">Procesa un documento en "Nuevo estudio".</div>
     <div id="vis-body" style="display:none">
@@ -233,7 +243,6 @@ hr{border:none;border-top:1px solid var(--border);margin:12px 0}
     </div>
   </div>
 
-  <!-- FLASHCARDS -->
   <div id="tab-flash" class="tab">
     <div id="fl-empty" class="empty">Procesa un documento en "Nuevo estudio".</div>
     <div id="fl-body" style="display:none">
@@ -245,7 +254,6 @@ hr{border:none;border-top:1px solid var(--border);margin:12px 0}
     </div>
   </div>
 
-  <!-- REPASAR -->
   <div id="tab-review" class="tab">
     <div id="rv-sel">
       <div class="slabel">Selecciona estudio</div>
@@ -279,7 +287,6 @@ hr{border:none;border-top:1px solid var(--border);margin:12px 0}
     </div>
   </div>
 
-  <!-- BASE DE DATOS -->
   <div id="tab-db" class="tab">
     <div class="row-between" style="margin-bottom:14px">
       <span style="font-size:15px;font-weight:600">Estudios guardados</span>
@@ -293,56 +300,49 @@ hr{border:none;border-top:1px solid var(--border);margin:12px 0}
 </div>
 
 <script>
-const SUPABASE_URL = 'https://uomjnjmghfcepfquhllz.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_CNrqjHqhWQtg9_idWV7-Tg_nL9kxTTi';
-const MODEL = 'claude-sonnet-4-6';
-const supa = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-let G = {studies:[],cur:null,uid:null,intv:1,revQueue:[],revIdx:0,revStudy:null,revC:0,revW:0,revAnswered:false};
+const SUPABASE_URL='https://uomjnjmghfcepfquhllz.supabase.co';
+const SUPABASE_KEY='sb_publishable_CNrqjHqhWQtg9_idWV7-Tg_nL9kxTTi';
+const MODEL='claude-sonnet-4-6';
+const supa=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let G={studies:[],cur:null,uid:null,intv:1,revQueue:[],revIdx:0,revStudy:null,revC:0,revW:0,revAnswered:false};
 
-// ── AUTH ──────────────────────────────────────────────
-function showAuthTab(tab, btn) {
+// ── AUTH ─────────────────────────────────────────────
+function showAuthTab(tab,btn){
   document.querySelectorAll('.auth-tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  document.getElementById('auth-login').style.display = tab==='login'?'block':'none';
-  document.getElementById('auth-register').style.display = tab==='register'?'block':'none';
+  document.getElementById('auth-login').style.display=tab==='login'?'block':'none';
+  document.getElementById('auth-register').style.display=tab==='register'?'block':'none';
 }
-
-async function doLogin() {
-  const email = document.getElementById('login-email').value.trim();
-  const pass = document.getElementById('login-pass').value;
-  const errEl = document.getElementById('login-err');
-  errEl.style.display='none';
-  const {error} = await supa.auth.signInWithPassword({email,password:pass});
+async function doLogin(){
+  const email=document.getElementById('login-email').value.trim();
+  const pass=document.getElementById('login-pass').value;
+  const errEl=document.getElementById('login-err');errEl.style.display='none';
+  const {error}=await supa.auth.signInWithPassword({email,password:pass});
   if(error){errEl.textContent=error.message;errEl.style.display='block';}
 }
-
-async function doRegister() {
-  const email = document.getElementById('reg-email').value.trim();
-  const pass = document.getElementById('reg-pass').value;
-  const errEl = document.getElementById('reg-err');
-  errEl.style.display='none';
-  const {error} = await supa.auth.signUp({email,password:pass});
+async function doRegister(){
+  const email=document.getElementById('reg-email').value.trim();
+  const pass=document.getElementById('reg-pass').value;
+  const errEl=document.getElementById('reg-err');errEl.style.display='none';
+  const {error}=await supa.auth.signUp({email,password:pass});
   if(error){errEl.textContent=error.message;errEl.style.display='block';}
   else{errEl.style.color='var(--success)';errEl.textContent='Cuenta creada. Revisa tu email para confirmar.';errEl.style.display='block';}
 }
-
 async function signOut(){if(confirm('¿Cerrar sesión?'))await supa.auth.signOut();}
-
 supa.auth.onAuthStateChange((event,session)=>{
   if(session?.user){
     G.uid=session.user.id;
     document.getElementById('auth-screen').style.display='none';
     document.getElementById('main-app').style.display='block';
     document.getElementById('user-email').textContent=session.user.email;
-    loadStudies();
-    restoreApiKey();
+    loadStudies();restoreApiKey();
   } else {
     document.getElementById('auth-screen').style.display='flex';
     document.getElementById('main-app').style.display='none';
   }
 });
 
-// ── DATABASE ──────────────────────────────────────────
+// ── DATABASE ─────────────────────────────────────────
 async function loadStudies(){
   const {data,error}=await supa.from('studies').select('*').eq('user_id',G.uid).order('created_at',{ascending:false});
   if(error){notify('Error cargando: '+error.message,true);return;}
@@ -355,11 +355,10 @@ async function saveStudyDB(study){
 }
 async function deleteStudyDB(id){await supa.from('studies').delete().eq('id',id).eq('user_id',G.uid);}
 
-// ── API KEY ───────────────────────────────────────────
 function restoreApiKey(){const k=localStorage.getItem('anthropic_key');if(k)document.getElementById('p-apikey').value=k;}
 function getApiKey(){const k=document.getElementById('p-apikey').value.trim();if(k)localStorage.setItem('anthropic_key',k);return k;}
 
-// ── NAV ───────────────────────────────────────────────
+// ── NAV ──────────────────────────────────────────────
 function goTab(t,btn){
   document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
   document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
@@ -370,7 +369,7 @@ function goTab(t,btn){
   if(t==='review')renderRevSel();if(t==='db')renderDB();if(t==='home')refreshHome();
 }
 
-// ── HOME ──────────────────────────────────────────────
+// ── HOME ─────────────────────────────────────────────
 function refreshHome(){
   const now=Date.now();
   const tc=G.studies.reduce((a,s)=>a+(s.cards?.length||0),0);
@@ -386,59 +385,187 @@ function refreshHome(){
     pd.style.display='block';
     document.getElementById('home-pd-list').innerHTML=pending.map(s=>{
       const d=s.cards.filter(c=>c.nextReview<=now).length;
-      return `<div class="srow" onclick="goTab('review',null)"><div class="row-between"><span style="font-size:13px;font-weight:500">${e(s.topic)}</span><span class="badge easy">${d} pendientes</span></div><div style="font-size:11px;color:var(--text-3);margin-top:2px">${e(s.subject)} · ${e(s.name)}</div></div>`;
+      return `<div class="srow" onclick="goTab('review',null)"><div class="row-between"><span style="font-size:13px;font-weight:500">${esc(s.topic)}</span><span class="badge easy">${d} pendientes</span></div><div style="font-size:11px;color:var(--text-3);margin-top:2px">${esc(s.subject)} · ${esc(s.name)}</div></div>`;
     }).join('');
   } else pd.style.display='none';
 }
-
 function setPill(btn){document.querySelectorAll('.pill').forEach(b=>b.classList.remove('active'));btn.classList.add('active');G.intv=parseInt(btn.dataset.v);}
 
-// ── CLAUDE ────────────────────────────────────────────
-async function callClaude(prompt,apiKey){
+// ── MARKDOWN + SEÑALIZACIÓN VISUAL ───────────────────
+function renderMd(txt){
+  if(!txt)return'—';
+  let h=esc(txt);
+  // [FUND] término → rojo negrita
+  h=h.replace(/\*\*\[FUND\]\s*([^*]+)\*\*/g,'<b class="fund">$1</b>');
+  h=h.replace(/\[FUND\]\s*\*\*([^*]+)\*\*/g,'<b class="fund">$1</b>');
+  h=h.replace(/\[FUND\]\s+([^\n<]+)/g,'<b class="fund">$1</b>');
+  // [IMP] término → azul negrita
+  h=h.replace(/\*\*\[IMP\]\s*([^*]+)\*\*/g,'<b class="imp">$1</b>');
+  h=h.replace(/\[IMP\]\s*\*\*([^*]+)\*\*/g,'<b class="imp">$1</b>');
+  h=h.replace(/\[IMP\]\s+([^\n<]+)/g,'<b class="imp">$1</b>');
+  // **texto** → negrita
+  h=h.replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>');
+  // *texto* → cursiva
+  h=h.replace(/\*([^*]+)\*/g,'<i>$1</i>');
+  // líneas con guión → lista
+  h=h.replace(/^[-•]\s+(.+)$/gm,'<li>$1</li>');
+  h=h.replace(/(<li>.*<\/li>)/gs,m=>'<ul>'+m+'</ul>');
+  // saltos de línea → párrafos
+  h=h.split(/\n\n+/).map(p=>p.trim()?`<p>${p.replace(/\n/g,'<br>')}</p>`:'').join('');
+  return h||'—';
+}
+
+// ── CLAUDE API ────────────────────────────────────────
+async function callClaude(prompt,apiKey,maxTok){
   const r=await fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
     headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-    body:JSON.stringify({model:MODEL,max_tokens:1000,messages:[{role:'user',content:prompt}]})
+    body:JSON.stringify({model:MODEL,max_tokens:maxTok||2000,messages:[{role:'user',content:prompt}]})
   });
-  const d=await r.json();if(d.error)throw new Error(d.error.message);
+  const d=await r.json();
+  if(d.error)throw new Error(d.error.message);
   return d.content.map(c=>c.text||'').join('');
 }
-
 function sec(txt,k){const m=txt.match(new RegExp(`\\[${k}\\]([\\s\\S]*?)\\[/${k}\\]`));return m?m[1].trim():'';}
 
 const STEP_LABELS=['Resumen ejecutivo y mapa de conceptos','Informe integrado y mnemotecnias','Tablas comparativas y síntesis','Flashcards (fácil / media / difícil)','Visual interactivo','Guardando en tu cuenta'];
-
 function setStep(active){
   document.getElementById('steps-list').innerHTML=STEP_LABELS.map((lbl,i)=>{
-    if(i<active)return `<div class="step done"><span>✓</span>${lbl}</div>`;
-    if(i===active)return `<div class="step running"><span class="spinner"></span>${lbl}</div>`;
-    return `<div class="step"><span style="width:13px;display:inline-block"></span>${lbl}</div>`;
+    if(i<active)return`<div class="step done"><span>✓</span>${lbl}</div>`;
+    if(i===active)return`<div class="step running"><span class="spinner"></span>${lbl}</div>`;
+    return`<div class="step"><span style="width:13px;display:inline-block"></span>${lbl}</div>`;
   }).join('');
 }
 
-function buildP1(doc,t,s){return `Analiza este documento de ${s} sobre "${t}". Responde SOLO con los marcadores.\n[MODULO_0]\nTEMA: ${t}\nASIGNATURA: ${s}\nDENSIDAD: [Baja/Media/Alta]\n[/MODULO_0]\n[MODULO_1]\nResumen ejecutivo 150-200 palabras con los puntos clave.\n[/MODULO_1]\n[MODULO_2]\nMapa jerárquico con ├─ └─ │, mínimo 12 nodos.\n[/MODULO_2]\nDOCUMENTO:\n${doc.substring(0,3000)}`;}
-function buildP2(doc,t,s){return `Analiza este documento de ${s} sobre "${t}". Responde SOLO con los marcadores.\n[MODULO_3]\nInforme: Definición, Fundamentos, Desarrollo, Análisis, Conclusiones. Máx 300 palabras.\n[/MODULO_3]\n[MODULO_4]\nMínimo 4 mnemotecnias. Formato: NOMBRE/FÓRMULA/MEMORIZA/CÓMO.\n[/MODULO_4]\nDOCUMENTO:\n${doc.substring(0,3000)}`;}
-function buildP3(doc,t,s){return `Analiza este documento de ${s} sobre "${t}". Responde SOLO con los marcadores.\n[MODULO_5]\nTablas comparativas. Si no hay: "Sin elementos comparables".\n[/MODULO_5]\n[MODULO_8]\nSíntesis: (1) Qué aporta, (2) Qué profundizar, (3) Próximos pasos.\n[/MODULO_8]\nDOCUMENTO:\n${doc.substring(0,3000)}`;}
-function buildP4(doc,t,s){return `Genera 9 flashcards sobre ${t} (${s}): 3 fáciles, 3 medias, 3 difíciles.\nFormato:\nFLASHCARD [N]\nPREGUNTA: [pregunta]\nDIFICULTAD: Fácil|Media|Difícil\nA) [opción]\nB) [opción]\nC) [opción]\nD) [opción]\nE) [opción]\nRESPUESTA CORRECTA: [letra]\nEXPLICACIÓN: [por qué, máx 40 palabras]\n\nDocumento:\n${doc.substring(0,2500)}`;}
-function buildP5(doc,t,s){return `Genera SVG interactivo para aprender ${t} (${s}). SOLO CÓDIGO SVG SIN NADA MÁS.\n- Primera línea: <svg viewBox="0 0 600 380" xmlns="http://www.w3.org/2000/svg">\n- Nodos clicables: data-title="TITULO" data-desc="DESCRIPCION 1-2 frases"\n- Nodos principales: rect rx="8" fill="#EFF6FF" stroke="#2563EB" stroke-width="1.5"\n- Nodos secundarios: rect rx="6" fill="#F0FDF4" stroke="#16A34A"\n- Texto: font-family="system-ui,sans-serif" font-size="12" fill="#1a1a18" text-anchor="middle"\n- Máx 8 nodos. Título arriba font-size="15" font-weight="600"\nDocumento:\n${doc.substring(0,2000)}`;}
+// ── PROMPTS ───────────────────────────────────────────
+const SV=`Usa estas etiquetas de señalización visual obligatorias:
+- Concepto fundamental (prioridad máxima): **[FUND] término**
+- Concepto importante (prioridad media): **[IMP] término**
+- Concepto relevante: **término**
+Aplica estas etiquetas en TODOS los conceptos clave del texto.`;
 
+function buildP1(doc,t,s){return`Eres un experto en síntesis académica. Analiza este documento de ${s} sobre "${t}".
+${SV}
+Responde SOLO con estos marcadores exactos, sin texto fuera de ellos:
+
+[MODULO_0]
+TEMA: ${t}
+ASIGNATURA: ${s}
+DENSIDAD: [Baja/Media/Alta según número de conceptos]
+[/MODULO_0]
+
+[MODULO_1]
+Escribe un resumen ejecutivo COMPLETO y DETALLADO (mínimo 300 palabras) con TODOS los puntos importantes del documento. Aplica señalización visual en todos los conceptos clave. No seas breve: cubre todos los aspectos relevantes.
+[/MODULO_1]
+
+[MODULO_2]
+Construye un mapa jerárquico completo con ├─ └─ │. Mínimo 15 nodos. Aplica señalización visual en los nodos importantes.
+[/MODULO_2]
+
+DOCUMENTO COMPLETO:
+${doc.substring(0,4000)}`;}
+
+function buildP2(doc,t,s){return`Eres un experto en síntesis académica. Analiza este documento de ${s} sobre "${t}".
+${SV}
+Responde SOLO con estos marcadores exactos:
+
+[MODULO_3]
+Redacta un informe integrado COMPLETO Y DETALLADO (mínimo 400 palabras) con estas secciones: Definición y Contexto, Fundamentos teóricos, Desarrollo, Análisis, Conclusiones. Aplica señalización visual. No omitas ningún concepto importante del documento.
+[/MODULO_3]
+
+[MODULO_4]
+Genera mínimo 5 mnemotecnias para los conceptos más importantes. Formato para cada una:
+NOMBRE: [nombre]
+FÓRMULA: [acrónimo o regla]
+MEMORIZA: [qué concepto ayuda a recordar]
+CÓMO: [explicación de cómo funciona]
+[/MODULO_4]
+
+DOCUMENTO COMPLETO:
+${doc.substring(0,4000)}`;}
+
+function buildP3(doc,t,s){return`Eres un experto en síntesis académica. Analiza este documento de ${s} sobre "${t}".
+${SV}
+Responde SOLO con estos marcadores exactos:
+
+[MODULO_5]
+Detecta TODOS los pares o grupos de conceptos comparables y genera una tabla por cada par. Columnas adaptadas al contenido. Si no hay pares: "Sin elementos comparables".
+[/MODULO_5]
+
+[MODULO_8]
+Síntesis de aprendizaje en 3 partes:
+1. Qué aporta este documento
+2. Conceptos que requieren profundización
+3. Próximos pasos sugeridos (2-3 acciones concretas)
+[/MODULO_8]
+
+DOCUMENTO COMPLETO:
+${doc.substring(0,4000)}`;}
+
+function buildP4(doc,t,s){return`Genera exactamente 9 flashcards de estudio sobre ${t} (${s}): 3 fáciles, 3 medias, 3 difíciles.
+
+FORMATO ESTRICTO para cada flashcard (sin variaciones):
+FLASHCARD 1
+PREGUNTA: [pregunta directa y clara]
+DIFICULTAD: Fácil
+A) [opción]
+B) [opción]
+C) [opción]
+D) [opción]
+E) [opción]
+RESPUESTA: [letra]
+EXPLICACIÓN: [explicación breve máx 30 palabras]
+
+Separa cada flashcard con una línea en blanco. Varía la posición de la respuesta correcta. Los distractores deben ser plausibles.
+
+DOCUMENTO:
+${doc.substring(0,3000)}`;}
+
+function buildP5(doc,t,s){return`Genera un diagrama SVG interactivo educativo sobre ${t} (${s}).
+
+REGLAS ABSOLUTAS:
+1. Devuelve ÚNICAMENTE código SVG válido. Sin explicaciones, sin markdown, sin texto antes o después.
+2. Primera línea exacta: <svg viewBox="0 0 620 400" xmlns="http://www.w3.org/2000/svg">
+3. TODOS los nodos clicables DEBEN tener: data-title="TITULO" data-desc="Descripción completa de 2-3 frases sobre este concepto"
+4. Rectángulos principales: <rect rx="10" fill="#EFF6FF" stroke="#2563EB" stroke-width="2"/>
+5. Rectángulos secundarios: <rect rx="8" fill="#F0FDF4" stroke="#16A34A" stroke-width="1.5"/>
+6. Todo texto: font-family="system-ui,sans-serif" font-size="13" fill="#1a1a18" text-anchor="middle" dominant-baseline="middle"
+7. Título del tema en la parte superior: font-size="16" font-weight="600" fill="#1E3A8A"
+8. Máximo 8 nodos clicables bien distribuidos en el espacio
+9. Si hay proceso secuencial, incluye flechas con: marker-end="url(#arrow)"
+10. Define el marker al inicio: <defs><marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#6B7280"/></marker></defs>
+
+DOCUMENTO:
+${doc.substring(0,2500)}`;}
+
+// ── PARSER FLASHCARDS ─────────────────────────────────
 function parseCards(txt,intv){
   const cards=[];
-  txt.split(/FLASHCARD\s*\d+/i).filter(b=>b.trim().length>20).forEach(block=>{
-    const c={options:[],timesCorrect:0,timesFailed:0,nextReview:Date.now(),id:String(Date.now()+Math.random()),interval:intv};
-    block.split('\n').forEach(line=>{
-      line=line.trim();
-      if(/^PREGUNTA:/i.test(line))c.question=line.replace(/^PREGUNTA:\s*/i,'');
-      else if(/^DIFICULTAD:/i.test(line)){const d=line.replace(/^DIFICULTAD:\s*/i,'').toLowerCase();c.difficulty=d[0]==='f'?'easy':d[0]==='d'?'hard':'medium';}
-      else if(/^[A-E]\)/i.test(line))c.options.push(line);
-      else if(/^RESPUESTA CORRECTA:/i.test(line))c.correct=line.replace(/^RESPUESTA CORRECTA:\s*/i,'').trim().toUpperCase()[0];
-      else if(/^EXPLICACI/i.test(line))c.explanation=line.replace(/^EXPLICACI[OÓ]N:\s*/i,'');
-    });
-    if(c.question&&c.options.length>=2&&c.correct)cards.push(c);
+  // Dividir por FLASHCARD N
+  const blocks=txt.split(/FLASHCARD\s+\d+/i).filter(b=>b.trim().length>10);
+  blocks.forEach(block=>{
+    try{
+      const lines=block.split('\n').map(l=>l.trim()).filter(l=>l);
+      const c={options:[],timesCorrect:0,timesFailed:0,nextReview:Date.now(),id:String(Date.now()+Math.random()),interval:intv};
+      lines.forEach(line=>{
+        if(/^PREGUNTA:/i.test(line))c.question=line.replace(/^PREGUNTA:\s*/i,'').trim();
+        else if(/^DIFICULTAD:/i.test(line)){
+          const d=line.replace(/^DIFICULTAD:\s*/i,'').toLowerCase().trim();
+          c.difficulty=d.startsWith('f')?'easy':d.startsWith('d')?'hard':'medium';
+        }
+        else if(/^[A-E][)\.]/.test(line))c.options.push(line);
+        else if(/^RESPUESTA(CORRECTA)?[:\s]/i.test(line)){
+          const m=line.match(/[A-E]/);if(m)c.correct=m[0].toUpperCase();
+        }
+        else if(/^EXPLICACI/i.test(line))c.explanation=line.replace(/^EXPLICACI[OÓ]N?[:\s]*/i,'').trim();
+      });
+      if(c.question&&c.options.length>=2&&c.correct)cards.push(c);
+    }catch(err){}
   });
   return cards;
 }
 
+// ── ANÁLISIS PRINCIPAL ────────────────────────────────
 async function startAnalysis(){
   const name=document.getElementById('p-name').value.trim();
   const subj=document.getElementById('p-subj').value.trim();
@@ -453,20 +580,24 @@ async function startAnalysis(){
   setStep(0);
   const study={id:String(Date.now()),name,subject:subj,topic,interval:G.intv,created_at:new Date().toISOString(),cards:[],modules:{},svgData:null};
   try{
-    const r1=await callClaude(buildP1(doc,topic,subj),apiKey);
-    study.modules.m0=sec(r1,'MODULO_0');study.modules.m1=sec(r1,'MODULO_1');study.modules.m2=sec(r1,'MODULO_2');
+    const r1=await callClaude(buildP1(doc,topic,subj),apiKey,3000);
+    study.modules.m0=sec(r1,'MODULO_0');
+    study.modules.m1=sec(r1,'MODULO_1');
+    study.modules.m2=sec(r1,'MODULO_2');
     setStep(1);
-    const r2=await callClaude(buildP2(doc,topic,subj),apiKey);
-    study.modules.m3=sec(r2,'MODULO_3');study.modules.m4=sec(r2,'MODULO_4');
+    const r2=await callClaude(buildP2(doc,topic,subj),apiKey,3000);
+    study.modules.m3=sec(r2,'MODULO_3');
+    study.modules.m4=sec(r2,'MODULO_4');
     setStep(2);
-    const r3=await callClaude(buildP3(doc,topic,subj),apiKey);
-    study.modules.m5=sec(r3,'MODULO_5');study.modules.m8=sec(r3,'MODULO_8');
+    const r3=await callClaude(buildP3(doc,topic,subj),apiKey,2000);
+    study.modules.m5=sec(r3,'MODULO_5');
+    study.modules.m8=sec(r3,'MODULO_8');
     setStep(3);
-    const r4=await callClaude(buildP4(doc,topic,subj),apiKey);
+    const r4=await callClaude(buildP4(doc,topic,subj),apiKey,2000);
     study.cards=parseCards(r4,G.intv);
     setStep(4);
-    const r5=await callClaude(buildP5(doc,topic,subj),apiKey);
-    study.svgData=r5.trim().replace(/```[a-z]*/gi,'').replace(/```/g,'').trim();
+    const r5=await callClaude(buildP5(doc,topic,subj),apiKey,2000);
+    study.svgData=r5.trim().replace(/^```[a-z]*\n?/i,'').replace(/\n?```$/,'').trim();
     setStep(5);
     await saveStudyDB(study);
     G.studies.unshift(study);G.cur=study;
@@ -483,6 +614,7 @@ async function startAnalysis(){
   }
 }
 
+// ── SÍNTESIS ─────────────────────────────────────────
 function renderSyn(){
   const s=G.cur;
   document.getElementById('syn-empty').style.display=s?'none':'block';
@@ -490,10 +622,24 @@ function renderSyn(){
   if(!s)return;
   document.getElementById('syn-topic').textContent=s.topic;
   document.getElementById('syn-sub').textContent=s.subject+' · '+s.name;
-  const mods=[{k:'m0',t:'Módulo 0 — Identificación'},{k:'m1',t:'Módulo 1 — Resumen ejecutivo'},{k:'m2',t:'Módulo 2 — Mapa de conceptos'},{k:'m3',t:'Módulo 3 — Informe integrado'},{k:'m4',t:'Módulo 4 — Mnemotecnias'},{k:'m5',t:'Módulo 5 — Tablas comparativas'},{k:'m8',t:'Módulo 8 — Síntesis de aprendizaje'}];
-  document.getElementById('syn-mods').innerHTML=mods.map(m=>`<div style="margin-bottom:20px"><div class="module-title">${m.t}</div><div class="prose">${e(s.modules?.[m.k]||'—')}</div></div><hr>`).join('');
+  const mods=[
+    {k:'m0',t:'Módulo 0 — Identificación'},
+    {k:'m1',t:'Módulo 1 — Resumen ejecutivo'},
+    {k:'m2',t:'Módulo 2 — Mapa de conceptos'},
+    {k:'m3',t:'Módulo 3 — Informe integrado'},
+    {k:'m4',t:'Módulo 4 — Mnemotecnias'},
+    {k:'m5',t:'Módulo 5 — Tablas comparativas'},
+    {k:'m8',t:'Módulo 8 — Síntesis de aprendizaje'}
+  ];
+  document.getElementById('syn-mods').innerHTML=mods.map(m=>`
+    <div style="margin-bottom:24px">
+      <div class="module-title">${m.t}</div>
+      <div class="prose">${renderMd(s.modules?.[m.k])}</div>
+    </div><hr>`
+  ).join('');
 }
 
+// ── VISUAL ────────────────────────────────────────────
 function renderVis(){
   const s=G.cur;
   document.getElementById('vis-empty').style.display=(!s||!s.svgData)?'block':'none';
@@ -503,16 +649,27 @@ function renderVis(){
   const area=document.getElementById('vis-area');
   area.innerHTML=s.svgData;
   document.getElementById('vis-info').style.display='none';
+  // Hacer clicables todos los elementos con data-title
   area.querySelectorAll('[data-title]').forEach(el=>{
     el.style.cursor='pointer';
     el.addEventListener('click',()=>{
       document.getElementById('vis-info').style.display='block';
       document.getElementById('vis-info-t').textContent=el.getAttribute('data-title');
-      document.getElementById('vis-info-b').textContent=el.getAttribute('data-desc');
+      document.getElementById('vis-info-b').textContent=el.getAttribute('data-desc')||'';
+    });
+  });
+  // También buscar grupos g con data-title
+  area.querySelectorAll('g[data-title]').forEach(el=>{
+    el.style.cursor='pointer';
+    el.addEventListener('click',()=>{
+      document.getElementById('vis-info').style.display='block';
+      document.getElementById('vis-info-t').textContent=el.getAttribute('data-title');
+      document.getElementById('vis-info-b').textContent=el.getAttribute('data-desc')||'';
     });
   });
 }
 
+// ── FLASHCARDS ────────────────────────────────────────
 function renderFlash(){
   const s=G.cur;const has=s?.cards?.length;
   document.getElementById('fl-empty').style.display=has?'none':'block';
@@ -522,9 +679,17 @@ function renderFlash(){
   const med=s.cards.filter(c=>c.difficulty==='medium').length;
   const hard=s.cards.filter(c=>c.difficulty==='hard').length;
   document.getElementById('fl-badges').innerHTML=`<span class="badge easy">${easy} fáciles</span><span class="badge medium">${med} medias</span><span class="badge hard">${hard} difíciles</span>`;
-  document.getElementById('fl-list').innerHTML=s.cards.map((c,i)=>`<div class="card" style="margin-bottom:8px"><div class="row-between" style="margin-bottom:5px"><span style="font-size:13px;font-weight:500">${i+1}. ${e(c.question||'')}</span><span class="badge ${c.difficulty==='easy'?'easy':c.difficulty==='hard'?'hard':'medium'}">${c.difficulty==='easy'?'Fácil':c.difficulty==='hard'?'Difícil':'Media'}</span></div><div style="font-size:11px;color:var(--text-3)">Correcta: ${e(c.correct||'')}) · ${c.timesCorrect||0} aciertos · ${c.timesFailed||0} fallos</div></div>`).join('');
+  document.getElementById('fl-list').innerHTML=s.cards.map((c,i)=>`
+    <div class="card" style="margin-bottom:8px">
+      <div class="row-between" style="margin-bottom:5px">
+        <span style="font-size:13px;font-weight:500">${i+1}. ${esc(c.question||'')}</span>
+        <span class="badge ${c.difficulty==='easy'?'easy':c.difficulty==='hard'?'hard':'medium'}">${c.difficulty==='easy'?'Fácil':c.difficulty==='hard'?'Difícil':'Media'}</span>
+      </div>
+      <div style="font-size:11px;color:var(--text-3)">Correcta: ${esc(c.correct||'')}) · ${c.timesCorrect||0} aciertos · ${c.timesFailed||0} fallos</div>
+    </div>`).join('');
 }
 
+// ── REPASO ────────────────────────────────────────────
 function renderRevSel(){
   document.getElementById('rv-sel').style.display='block';
   document.getElementById('rv-active').style.display='none';
@@ -535,7 +700,7 @@ function renderRevSel(){
   const now=Date.now();
   document.getElementById('rv-list').innerHTML=G.studies.map((s,i)=>{
     const due=s.cards?.filter(c=>c.nextReview<=now).length||0;
-    return `<div class="srow" onclick="startRev(${i})"><div class="row-between"><span style="font-size:13px;font-weight:500">${e(s.topic)}</span>${due>0?`<span class="badge easy">${due} pendientes</span>`:'<span class="badge muted">al día</span>'}</div><div style="font-size:11px;color:var(--text-3);margin-top:2px">${e(s.subject)} · ${e(s.name)} · ${s.cards?.length||0} cartas</div></div>`;
+    return`<div class="srow" onclick="startRev(${i})"><div class="row-between"><span style="font-size:13px;font-weight:500">${esc(s.topic)}</span>${due>0?`<span class="badge easy">${due} pendientes</span>`:'<span class="badge muted">al día</span>'}</div><div style="font-size:11px;color:var(--text-3);margin-top:2px">${esc(s.subject)} · ${esc(s.name)} · ${s.cards?.length||0} cartas</div></div>`;
   }).join('');
 }
 
@@ -560,7 +725,7 @@ function showCard(){
   const dlabel=c.difficulty==='easy'?'Fácil':c.difficulty==='hard'?'Difícil':'Media';
   document.getElementById('rv-badge-wrap').innerHTML=`<span class="badge ${dl}">${dlabel}</span>`;
   document.getElementById('rv-q').textContent=c.question||'';
-  document.getElementById('rv-opts').innerHTML=(c.options||[]).map(o=>`<button class="opt-btn" onclick="revAnswer(this,'${o[0].toUpperCase()}')">${e(o)}</button>`).join('');
+  document.getElementById('rv-opts').innerHTML=(c.options||[]).map(o=>`<button class="opt-btn" onclick="revAnswer(this,'${o[0].toUpperCase()}')">${esc(o)}</button>`).join('');
   document.getElementById('rv-exp').style.display='none';
   document.getElementById('rv-next').style.display='none';
   G.revAnswered=false;
@@ -596,9 +761,9 @@ function nextCard(){
     refreshHome();
   } else showCard();
 }
-
 function exitRev(){G.revStudy=null;G.revQueue=[];renderRevSel();}
 
+// ── BASE DE DATOS ─────────────────────────────────────
 function renderDB(){
   const empty=document.getElementById('db-empty');
   if(!G.studies.length){document.getElementById('db-list').innerHTML='';empty.style.display='block';return;}
@@ -606,12 +771,11 @@ function renderDB(){
   document.getElementById('db-list').innerHTML=G.studies.map((s,i)=>{
     const ok=s.cards?.reduce((a,c)=>a+(c.timesCorrect||0),0)||0;
     const fail=s.cards?.reduce((a,c)=>a+(c.timesFailed||0),0)||0;
-    return `<div class="card"><div class="row-between"><div><div style="font-size:14px;font-weight:600">${e(s.topic)}</div><div style="font-size:11px;color:var(--text-3);margin-top:2px">${e(s.subject)} · ${e(s.name)} · ${new Date(s.created_at).toLocaleDateString('es-ES')}</div></div><div class="row" style="gap:6px"><button class="btn sm" onclick="loadSt(${i})">Cargar</button><button class="btn danger sm" onclick="delSt(${i})">Eliminar</button></div></div><hr><div style="font-size:12px;color:var(--text-2)">${s.cards?.length||0} cartas · ✓ ${ok} · ✗ ${fail} · Intervalo: ${s.interval}d</div></div>`;
+    return`<div class="card"><div class="row-between"><div><div style="font-size:14px;font-weight:600">${esc(s.topic)}</div><div style="font-size:11px;color:var(--text-3);margin-top:2px">${esc(s.subject)} · ${esc(s.name)} · ${new Date(s.created_at).toLocaleDateString('es-ES')}</div></div><div class="row" style="gap:6px"><button class="btn sm" onclick="loadSt(${i})">Cargar</button><button class="btn danger sm" onclick="delSt(${i})">Eliminar</button></div></div><hr><div style="font-size:12px;color:var(--text-2)">${s.cards?.length||0} cartas · ✓ ${ok} · ✗ ${fail} · Intervalo: ${s.interval}d</div></div>`;
   }).join('');
 }
 
 function loadSt(i){G.cur=G.studies[i];goTab('synthesis',null);}
-
 async function delSt(i){
   if(!confirm('¿Eliminar este estudio?'))return;
   await deleteStudyDB(G.studies[i].id);
@@ -619,14 +783,13 @@ async function delSt(i){
   if(!G.studies.find(s=>s.id===G.cur?.id))G.cur=G.studies[0]||null;
   renderDB();refreshHome();
 }
-
 async function clearAll(){
   if(!confirm('¿Borrar todos los estudios? No se puede deshacer.'))return;
   for(const s of G.studies)await deleteStudyDB(s.id);
   G.studies=[];G.cur=null;renderDB();refreshHome();
 }
 
-function e(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function notify(msg,isErr=false){const el=document.createElement('div');el.className='notify '+(isErr?'err':'ok');el.textContent=msg;document.body.appendChild(el);setTimeout(()=>el.remove(),3500);}
 </script>
 </body>
