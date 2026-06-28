@@ -212,7 +212,7 @@ hr{border:none;border-top:1px solid var(--border);margin:12px 0}
       <div class="slabel">Cómo funciona</div>
       <div style="font-size:13px;color:var(--text-2);line-height:1.9">
         1. <strong>Nuevo estudio</strong> → pega texto o sube PDF/Word → la IA genera síntesis completa, flashcards y visual interactivo.<br>
-        2. <strong>Síntesis</strong> → Módulo 1A (Resumen) · 1B (Resumen ampliado) · 2 (Esquema 3 niveles) · 3 (Informe) · 4 (Mnemotecnias) · 5 (Tablas) · 8 (Síntesis).<br>
+        2. <strong>Síntesis</strong> → Módulo 1 (Resumen) · 2 (Resumen+definiciones) · 3 (Esquema) · 4 (Informe) · 5 (Mnemotecnias) · 6 (Tablas) · 7 (Síntesis).<br>
         3. <strong>Flashcards</strong> → 5 opciones A-E, una correcta, botón "Siguiente" tras responder.<br>
         4. <strong>Repasar</strong> → Bien / Regular / Mal · repetición espaciada con progreso guardado.
       </div>
@@ -610,16 +610,93 @@ function renderMd(txt){
   return h||'<span style="color:var(--text-3)">—</span>';
 }
 
-// Renderizado especial para esquema jerárquico (preserva indentación + colorea)
-function renderEsquema(txt){
+function renderAcordeon(txt){
   if(!txt)return'<span style="color:var(--text-3)">—</span>';
-  let h=esc(txt);
-  h=h.replace(/\*\*\[FUND\]\s*([^*\n]+)\*\*/g,'<b class="fund">$1</b>');
-  h=h.replace(/\[FUND\]\s*([^\n<[]+)/g,'<b class="fund">$1</b>');
-  h=h.replace(/\*\*\[IMP\]\s*([^*\n]+)\*\*/g,'<b class="imp">$1</b>');
-  h=h.replace(/\[IMP\]\s*([^\n<[]+)/g,'<b class="imp">$1</b>');
-  h=h.replace(/\*\*([^*\n]+)\*\*/g,'<b>$1</b>');
-  return`<div class="esquema">${h}</div>`;
+  let data;
+  try{
+    const match=txt.match(/\{[\s\S]*\}/);
+    if(match)data=JSON.parse(match[0]);
+  }catch(e){}
+  if(!data||!data.temas)return`<div class="esquema">${esc(txt)}</div>`;
+
+  return data.temas.map((tema,ti)=>{
+    const colorBorder=tema.tipo==='fund'?'#dc2626':tema.tipo==='imp'?'#2563eb':'#d0d0c8';
+    const colorText=tema.tipo==='fund'?'#dc2626':tema.tipo==='imp'?'#2563eb':'var(--text)';
+    const colorBg=tema.tipo==='fund'?'#fef2f2':tema.tipo==='imp'?'#eff6ff':'var(--surface2)';
+    const id='acord-'+ti;
+    const subtemas=(tema.subtemas||[]).map((sub,si)=>{
+      const subColor=sub.tipo==='fund'?'#dc2626':sub.tipo==='imp'?'#2563eb':'var(--text-2)';
+      const detalles=(sub.detalles||[]).map(d=>`<li style="margin-bottom:4px;color:var(--text-2)">${esc(d)}</li>`).join('');
+      return`<div style="margin:8px 0 8px 16px;padding:10px 14px;border-left:2px solid ${subColor};background:var(--surface);border-radius:0 6px 6px 0">
+        <div style="font-size:13px;font-weight:600;color:${subColor};margin-bottom:6px">${esc(sub.titulo)}</div>
+        <ul style="padding-left:16px;font-size:12px;line-height:1.7">${detalles}</ul>
+      </div>`;
+    }).join('');
+    return`<div style="margin-bottom:8px;border:1px solid ${colorBorder};border-radius:10px;overflow:hidden">
+      <button onclick="toggleAcord('${id}')" style="width:100%;text-align:left;padding:13px 16px;background:${colorBg};border:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-family:inherit">
+        <span style="font-size:14px;font-weight:700;color:${colorText}">${esc(tema.titulo)}</span>
+        <span id="${id}-icon" style="font-size:12px;color:${colorText}">▼</span>
+      </button>
+      <div id="${id}" style="display:none;padding:8px 12px 12px;background:var(--surface)">${subtemas}</div>
+    </div>`;
+  }).join('');
+}
+function renderMnemo(txt){
+  if(!txt)return'<span style="color:var(--text-3)">—</span>';
+  let data;
+  try{
+    const match=txt.match(/\{[\s\S]*\}/);
+    if(match)data=JSON.parse(match[0]);
+  }catch(e){}
+  if(!data||!data.mnemotecnias)return`<div class="prose">${renderMd(txt)}</div>`;
+  const colors=['#2563eb','#16a34a','#d97706','#dc2626'];
+  return data.mnemotecnias.map((m,i)=>{
+    const color=colors[i%colors.length];
+    return`<div style="border:1px solid var(--border);border-radius:12px;margin-bottom:14px;overflow:hidden">
+      <div style="background:${color};padding:12px 16px">
+        <span style="color:#fff;font-size:15px;font-weight:700">${esc(m.nombre||'')}</span>
+      </div>
+      <div style="padding:14px 16px;background:var(--surface)">
+        <div style="font-size:18px;font-weight:700;color:${color};margin-bottom:10px;letter-spacing:0.02em">${esc(m.formula||'')}</div>
+        <div style="display:grid;grid-template-columns:90px 1fr;gap:6px;font-size:13px">
+          <span style="color:var(--text-3);font-weight:600">Memoriza</span>
+          <span style="color:var(--text-2)">${esc(m.memoriza||'')}</span>
+          <span style="color:var(--text-3);font-weight:600">Cómo</span>
+          <span style="color:var(--text-2)">${esc(m.como||'')}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function renderAcordeonM3(txt){
+  if(!txt)return'<span style="color:var(--text-3)">—</span>';
+  let data;
+  try{
+    const match=txt.match(/\{[\s\S]*\}/);
+    if(match)data=JSON.parse(match[0]);
+  }catch(e){}
+  if(!data||!data.secciones)return`<div class="prose">${renderMd(txt)}</div>`;
+
+  return data.secciones.map((sec,i)=>{
+    const id='m3-acord-'+i;
+    const contenidoHtml=renderMd(sec.contenido||'');
+    return`<div style="margin-bottom:8px;border:1px solid var(--border);border-radius:10px;overflow:hidden">
+      <button onclick="toggleAcord('${id}')" style="width:100%;text-align:left;padding:13px 16px;background:var(--surface2);border:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-family:inherit">
+        <span style="font-size:14px;font-weight:600;color:var(--text)">${esc(sec.titulo||'Sección '+(i+1))}</span>
+        <span id="${id}-icon" style="font-size:12px;color:var(--text-3)">▼</span>
+      </button>
+      <div id="${id}" style="display:none;padding:14px 16px;background:var(--surface)">
+        <div class="prose">${contenidoHtml}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function toggleAcord(id){
+  const el=document.getElementById(id);
+  const icon=document.getElementById(id+'-icon');
+  const open=el.style.display==='block';
+  el.style.display=open?'none':'block';
+  if(icon)icon.textContent=open?'▼':'▲';
 }
 
 // ── CLAUDE API ────────────────────────────────────────
@@ -654,15 +731,23 @@ const STEP_LABELS=[
   'Visual interactivo SVG',
   'Guardando en tu cuenta'
 ];
+let stepStates={};
 function setStep(active){
+  stepStates[active]='running';
   const pct=Math.round((active/STEP_LABELS.length)*100);
   document.getElementById('proc-bar').style.width=pct+'%';
   document.getElementById('proc-pct').textContent=pct+'%';
   document.getElementById('steps-list').innerHTML=STEP_LABELS.map((lbl,i)=>{
-    if(i<active)return`<div class="step done"><span>✓</span>${lbl}</div>`;
+    if(stepStates[i]==='error')return`<div class="step" style="color:var(--danger)"><span>✗</span>${lbl} <span style="font-size:11px">(falló — continuando)</span></div>`;
+    if(i<active||stepStates[i]==='done')return`<div class="step done"><span>✓</span>${lbl}</div>`;
     if(i===active)return`<div class="step running"><span class="spinner"></span>${lbl}</div>`;
     return`<div class="step"><span style="width:13px;display:inline-block"></span>${lbl}</div>`;
   }).join('');
+}
+function setStepError(idx,msg){
+  stepStates[idx]='error';
+  setStep(idx+1);
+  notify('Módulo '+(idx+1)+' falló: '+msg+' — continuando',true);
 }
 
 const SV=`Señalización visual OBLIGATORIA en todos los conceptos clave:
@@ -697,16 +782,25 @@ ${SV}
 Responde SOLO con el marcador exacto siguiente:
 
 [MODULO_2]
-Construye un esquema jerárquico con EXACTAMENTE 3 niveles de profundidad. Usa numeración:
-1. TEMA PRINCIPAL [FUND]
-   1.1. Subtema importante [IMP]
-       1.1.1. Detalle o concepto específico
-       1.1.2. Detalle o concepto específico
-   1.2. Subtema [IMP]
-       1.2.1. Detalle
-2. TEMA PRINCIPAL [FUND]
-   ...
-Mínimo 5 temas nivel 1, cada uno con al menos 3 subtemas nivel 2, cada subtema con 2+ detalles nivel 3.
+Genera un esquema jerárquico con EXACTAMENTE 3 niveles. Usa este formato JSON (sin markdown, solo JSON):
+{
+  "temas": [
+    {
+      "titulo": "TEMA PRINCIPAL",
+      "tipo": "fund",
+      "subtemas": [
+        {
+          "titulo": "Subtema importante",
+          "tipo": "imp",
+          "detalles": ["Detalle 1", "Detalle 2", "Detalle 3"]
+        }
+      ]
+    }
+  ]
+}
+- tipo puede ser: "fund", "imp", o "normal"
+- Mínimo 5 temas nivel 1, cada uno con 3+ subtemas, cada subtema con 2+ detalles
+- Sin señalización [FUND] ni [IMP] en el texto, usa el campo "tipo"
 [/MODULO_2]
 
 ${getDoc(doc,isPdf,5000)}`;
@@ -718,27 +812,20 @@ ${SV}
 Responde SOLO con el marcador exacto siguiente:
 
 [MODULO_3]
-Redacta un INFORME INTEGRADO completo y detallado (mínimo 600 palabras). Estructura obligatoria:
-
-## Definición y Contexto
-Qué es, en qué contexto se sitúa, por qué es relevante.
-
-## Fundamentos Teóricos
-Bases científicas, mecanismos, teorías que lo sustentan.
-
-## Desarrollo
-Descripción detallada: conceptos principales, clasificaciones, tipos, variantes.
-
-## Análisis
-Relaciones entre conceptos, puntos clave para entender y recordar, comparativas relevantes.
-
-## Conclusiones
-Síntesis de lo más importante, implicaciones clínicas o prácticas.
-
-## Perspectivas
-Estado actual del conocimiento, áreas de investigación, controversias o debates.
-
-Aplica señalización visual en TODOS los datos clave. No omitas ninguna sección.
+Genera un informe integrado completo siguiendo LA ESTRUCTURA ORIGINAL del documento. Devuelve un JSON (sin markdown):
+{
+  "secciones": [
+    {
+      "titulo": "Título de la sección tal como aparece en el documento",
+      "contenido": "Desarrollo completo de la sección (mínimo 100 palabras). Aplica señalización **[FUND] término** y **[IMP] término** en todos los conceptos clave."
+    }
+  ]
+}
+- Respeta el orden y los títulos originales del documento
+- Si el documento no tiene secciones claras, crea las que mejor organicen el contenido
+- Mínimo 5 secciones, máximo 10
+- Cada sección con contenido detallado y señalización visual
+- Solo JSON, sin texto fuera del JSON
 [/MODULO_3]
 
 ${getDoc(doc,isPdf,5000)}`;
@@ -746,16 +833,23 @@ ${getDoc(doc,isPdf,5000)}`;
 
 function buildP4(doc,t,s,isPdf){
   return`Eres un experto en síntesis académica. Analiza este documento de ${s} sobre "${t}".
-${SV}
 Responde SOLO con estos tres marcadores exactos, sin texto fuera de ellos:
 
 [MODULO_4]
-Genera EXACTAMENTE 8 mnemotecnias. Primero conceptos [FUND], luego [IMP]. Formato para CADA una (separa con ---):
-NOMBRE: [nombre memorable]
-FÓRMULA: [acrónimo, regla o frase mnemotécnica]
-MEMORIZA: [concepto clave con señalización **[FUND] x** o **[IMP] x**]
-CÓMO: [explicación breve de cómo funciona]
----
+Genera EXACTAMENTE 4 mnemotecnias de los conceptos MÁS IMPORTANTES del documento. Devuelve un JSON (sin markdown):
+{
+  "mnemotecnias": [
+    {
+      "nombre": "Nombre corto y memorable",
+      "formula": "La frase o acrónimo mnemotécnico en texto limpio, sin asteriscos ni símbolos especiales",
+      "memoriza": "Concepto clave que ayuda a recordar",
+      "como": "Explicación breve y clara de cómo funciona en 1-2 frases simples"
+    }
+  ]
+}
+- Solo 4 mnemotecnias, las más útiles
+- Sin asteriscos, sin markdown, texto limpio
+- Fórmulas simples y fáciles de recordar
 [/MODULO_4]
 
 [MODULO_5]
@@ -769,7 +863,7 @@ Síntesis de aprendizaje en exactamente 3 secciones:
 Síntesis del valor específico del material en 3-4 frases.
 
 **Conceptos que requieren profundización**
-- [lista con viñetas de puntos insuficientes, ambiguos o donde buscar más]
+- [lista con viñetas de puntos insuficientes o donde buscar más]
 
 **Próximos pasos sugeridos**
 1. [Acción concreta de estudio]
@@ -853,11 +947,22 @@ function parseCards(txt,intv){
 }
 
 // ── ANÁLISIS PRINCIPAL ────────────────────────────────
+async function tryStep(stepIdx, fn, study){
+  setStep(stepIdx);
+  try{
+    await fn();
+    await saveStudyDB(study);
+    renderSyn();
+  }catch(ex){
+    console.error('Error paso '+stepIdx+':',ex.message);
+    setStepError(stepIdx, ex.message);
+  }
+}
+
 async function startAnalysis(){
   const name=document.getElementById('p-name').value.trim();
   const subj=document.getElementById('p-subj').value.trim();
   const topic=document.getElementById('p-topic').value.trim();
-  const apiKey=getApiKey();
   const err=document.getElementById('p-err');err.style.display='none';
 
   let doc='';const isPdf=G.isPdf;const pdfB64=G.pdfB64;
@@ -869,73 +974,85 @@ async function startAnalysis(){
     doc=G.extractedText;
   }
   if(!name||!subj||!topic){err.textContent='Rellena nombre, asignatura y tema.';err.style.display='inline';return;}
-  if(!apiKey){err.textContent='Introduce tu API key de Anthropic.';err.style.display='inline';return;}
 
   document.getElementById('btn-go').disabled=true;
   document.getElementById('proc-prog').style.display='block';
-
-  // Detectar densidad por longitud del texto
-  const wordCount=isPdf?2000:(doc.split(/\s+/).length);
-  const density=wordCount>3000?'Alta':wordCount>1000?'Media':'Baja';
+  stepStates={};
 
   const study={id:String(Date.now()),name,subject:subj,topic,interval:G.intv,
-               created_at:new Date().toISOString(),cards:[],modules:{},svgData:null,history:[]};
-  try{
-    // PASO 0: Módulos 1A + 1B
-    setStep(0);
-    const r1=await callClaude(buildP1(doc,topic,subj,isPdf),apiKey,6000,isPdf,pdfB64);
-    study.modules.m1a=sec(r1,'MODULO_1A');
-    study.modules.m1b=sec(r1,'MODULO_1B');
+               created_at:new Date().toISOString(),cards:[],modules:{},svgData:null,history:[],
+               status:'pending'};
 
-    // PASO 1: Módulo 2 (esquema 3 niveles)
-    setStep(1);
-    const r2=await callClaude(buildP2(doc,topic,subj,isPdf),apiKey,3000,isPdf,pdfB64);
-    study.modules.m2=sec(r2,'MODULO_2');
+  // Guardar estudio en Supabase con el documento para que lo procese el servidor
+  const payload={
+    id:study.id,user_id:G.uid,name:study.name,subject:study.subject,topic:study.topic,
+    interval:study.interval,created_at:study.created_at,
+    modules_data:'{}',cards_data:'[]',svg_data:'',history:[],
+    status:'pending',
+    doc_text:isPdf?'':doc.substring(0,50000),
+    is_pdf:isPdf,
+    pdf_b64:isPdf?pdfB64:''
+  };
+  const {error:saveErr}=await supa.from('studies').upsert(payload,{onConflict:'id'});
+  if(saveErr){err.textContent='Error guardando: '+saveErr.message;err.style.display='inline';document.getElementById('btn-go').disabled=false;return;}
 
-    // PASO 2: Módulo 3 (informe integrado)
-    setStep(2);
-    const r3=await callClaude(buildP3(doc,topic,subj,isPdf),apiKey,7000,isPdf,pdfB64);
-    study.modules.m3=sec(r3,'MODULO_3');
+  // Ir a síntesis inmediatamente
+  G.studies.unshift(study);G.cur=study;
+  goTab('synthesis',null);
+  document.getElementById('proc-prog').style.display='block';
 
-    // PASO 3: Módulos 4 + 5 + 8
-    setStep(3);
-    const r4=await callClaude(buildP4(doc,topic,subj,isPdf),apiKey,6000,isPdf,pdfB64);
-    study.modules.m4=sec(r4,'MODULO_4');
-    study.modules.m5=sec(r4,'MODULO_5');
-    study.modules.m8=sec(r4,'MODULO_8');
+  // Lanzar la Edge Function en el servidor (se ejecuta aunque cierres la pestaña)
+  setStep(0);
+  fetch(SUPABASE_URL+'/functions/v1/process-study',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_KEY,'apikey':SUPABASE_KEY},
+    body:JSON.stringify({studyId:study.id})
+  }).catch(e=>console.log('Edge function error:',e));
 
-    // PASO 4: Flashcards
-    setStep(4);
-    const r5=await callClaude(buildP5(doc,topic,subj,isPdf,density),apiKey,5000,isPdf,pdfB64);
-    study.cards=parseCards(r5,G.intv);
-    if(!study.cards.length){
-      const r5b=await callClaude(buildP5(doc,topic,subj,isPdf,'Baja'),apiKey,3000,isPdf,pdfB64);
-      study.cards=parseCards(r5b,G.intv);
+  // Polling: cada 8 segundos comprueba si el estudio está listo
+  notify('📤 Procesando en el servidor — puedes cerrar esta pestaña y volver más tarde');
+  let pollCount=0;
+  const poll=setInterval(async()=>{
+    pollCount++;
+    const {data}=await supa.from('studies').select('modules_data,cards_data,svg_data,status,error_msg').eq('id',study.id).single();
+    if(!data)return;
+
+    // Actualizar módulos según van llegando
+    try{
+      const m=JSON.parse(data.modules_data||'{}');
+      const c=JSON.parse(data.cards_data||'[]');
+      study.modules=m;study.cards=c;
+      if(data.svg_data)study.svgData=data.svg_data;
+
+      // Actualizar paso visual según qué módulos ya existen
+      const paso=m.m1a?m.m2?m.m3?m.m4?c.length?data.svg_data?6:5:4:3:2:1:0;
+      setStep(paso);
+      renderSyn();
+    }catch(e){}
+
+    if(data.status==='done'){
+      clearInterval(poll);
+      await loadStudies();
+      document.getElementById('proc-prog').style.display='none';
+      document.getElementById('btn-go').disabled=false;
+      document.getElementById('p-doc').value='';
+      G.extractedText='';G.isPdf=false;G.pdfB64='';
+      const fn=document.getElementById('file-name');if(fn)fn.style.display='none';
+      refreshHome();renderSyn();
+      notify('✓ Estudio completado: '+study.cards.length+' flashcards generadas');
+    } else if(data.status==='error'){
+      clearInterval(poll);
+      document.getElementById('proc-prog').style.display='none';
+      document.getElementById('btn-go').disabled=false;
+      notify('Error en el servidor: '+(data.error_msg||'desconocido'),true);
+    } else if(pollCount>60){
+      // Timeout tras 8 minutos
+      clearInterval(poll);
+      document.getElementById('proc-prog').style.display='none';
+      document.getElementById('btn-go').disabled=false;
+      notify('Tiempo de espera agotado. Revisa la pestaña Base de datos.',true);
     }
-
-    // PASO 5: Visual SVG
-    setStep(5);
-    const r6=await callClaude(buildP6(doc,topic,subj,isPdf),apiKey,3000,isPdf,pdfB64);
-    let svg=r6.trim().replace(/^```[a-z]*\n?/i,'').replace(/\n?```$/,'').trim();
-    if(svg.includes('<svg'))study.svgData=svg;
-
-    // PASO 6: Guardar
-    setStep(6);
-    await saveStudyDB(study);
-    G.studies.unshift(study);G.cur=study;
-    document.getElementById('proc-prog').style.display='none';
-    document.getElementById('btn-go').disabled=false;
-    document.getElementById('p-doc').value='';
-    G.extractedText='';G.isPdf=false;G.pdfB64='';
-    const fn=document.getElementById('file-name');if(fn)fn.style.display='none';
-    refreshHome();notify('✓ Estudio guardado: '+study.cards.length+' flashcards generadas');
-    goTab('synthesis',null);
-  }catch(ex){
-    document.getElementById('proc-prog').style.display='none';
-    document.getElementById('btn-go').disabled=false;
-    err.textContent='Error: '+ex.message;err.style.display='inline';
-    notify(ex.message,true);console.error(ex);
-  }
+  },8000);
 }
 
 // ── SÍNTESIS ──────────────────────────────────────────
@@ -947,17 +1064,17 @@ function renderSyn(){
   document.getElementById('syn-topic').textContent=s.topic;
   document.getElementById('syn-sub').textContent=s.subject+' · '+s.name;
   const mods=[
-    {k:'m1a',t:'Módulo 1A — Resumen ejecutivo',type:'md'},
-    {k:'m1b',t:'Módulo 1B — Resumen con definiciones integradas',type:'md'},
-    {k:'m2', t:'Módulo 2 — Esquema jerárquico (3 niveles)',type:'esq'},
-    {k:'m3', t:'Módulo 3 — Informe integrado',type:'md'},
-    {k:'m4', t:'Módulo 4 — Mnemotecnias',type:'md'},
-    {k:'m5', t:'Módulo 5 — Tablas comparativas',type:'md'},
-    {k:'m8', t:'Módulo 8 — Síntesis de aprendizaje',type:'md'},
+    {k:'m1a',t:'Módulo 1 — Resumen ejecutivo',type:'md'},
+    {k:'m1b',t:'Módulo 2 — Resumen con definiciones integradas',type:'md'},
+    {k:'m2', t:'Módulo 3 — Esquema jerárquico',type:'esq'},
+    {k:'m3', t:'Módulo 4 — Informe integrado',type:'m3'},
+    {k:'m4', t:'Módulo 5 — Mnemotecnias',type:'m4'},
+    {k:'m5', t:'Módulo 6 — Tablas comparativas',type:'md'},
+    {k:'m8', t:'Módulo 7 — Síntesis de aprendizaje',type:'md'},
   ];
   document.getElementById('syn-mods').innerHTML=mods.map(m=>{
     const content=s.modules?.[m.k];
-    const html=m.type==='esq'?renderEsquema(content):`<div class="prose">${renderMd(content)}</div>`;
+    const html=m.type==='esq'?renderAcordeon(content):m.type==='m3'?renderAcordeonM3(content):m.type==='m4'?renderMnemo(content):`<div class="prose">${renderMd(content)}</div>`;
     return`<div style="margin-bottom:24px"><div class="module-title">${m.t}</div>${html}</div><hr>`;
   }).join('');
 }
@@ -1006,7 +1123,7 @@ function renderFlash(){
 
 function startFCSession(){
   const s=G.cur;if(!s?.cards?.length)return;
-  G.fcCards=[...s.cards].sort((a,b)=>{const o={easy:0,medium:1,hard:2};return(o[a.difficulty]||0)-(o[b.difficulty]||0);});
+  G.fcCards=[...s.cards].sort(()=>Math.random()-0.5);
   G.fcIdx=0;G.fcC=0;G.fcW=0;G.fcAnswered=false;
   document.getElementById('fl-list-view').style.display='none';
   const wrap=document.getElementById('fc-session-wrap');wrap.classList.add('active');
@@ -1080,21 +1197,73 @@ function renderRevSel(){
   if(!G.studies.length){document.getElementById('rv-list').innerHTML='';empty.style.display='block';return;}
   empty.style.display='none';
   const now=Date.now();
-  document.getElementById('rv-list').innerHTML=G.studies.map((s,i)=>{
-    const due=s.cards?.filter(c=>c.nextReview<=now).length||0;
-    const ok=s.cards?.reduce((a,c)=>a+(c.timesCorrect||0),0)||0;
-    const fail=s.cards?.reduce((a,c)=>a+(c.timesFailed||0),0)||0;
-    const pct=ok+fail>0?Math.round((ok/(ok+fail))*100):'-';
-    const last=s.history?.length?new Date(s.history[s.history.length-1].date).toLocaleDateString('es-ES'):'Sin repasos';
-    return`<div class="srow" onclick="startRev(${i})">
-      <div class="row-between">
-        <span style="font-size:13px;font-weight:600">${esc(s.topic)}</span>
-        ${due>0?`<span class="badge easy">${due} pendientes</span>`:'<span class="badge muted">al día</span>'}
-      </div>
-      <div style="font-size:11px;color:var(--text-3);margin-top:3px">${esc(s.subject)} · ${esc(s.name)} · ${s.cards?.length||0} cartas · Acierto: ${pct}%</div>
-      <div style="font-size:11px;color:var(--text-3);margin-top:1px">Último repaso: ${last}</div>
-    </div>`;
-  }).join('');
+  document.getElementById('rv-list').innerHTML=`
+    <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <span style="font-size:12px;color:var(--text-3)">Selecciona uno o varios estudios para repasar juntos:</span>
+      <button class="btn sm" onclick="selectAllStudies()">Seleccionar todos</button>
+      <button class="btn primary sm" onclick="startRevSelected()">▶ Repasar seleccionados</button>
+    </div>
+    ${G.studies.map((s,i)=>{
+      const due=s.cards?.filter(c=>c.nextReview<=now).length||0;
+      const ok=s.cards?.reduce((a,c)=>a+(c.timesCorrect||0),0)||0;
+      const fail=s.cards?.reduce((a,c)=>a+(c.timesFailed||0),0)||0;
+      const pct=ok+fail>0?Math.round((ok/(ok+fail))*100):'-';
+      const last=s.history?.length?new Date(s.history[s.history.length-1].date).toLocaleDateString('es-ES'):'Sin repasos';
+      return`<div class="srow" onclick="toggleStudySel(${i},this)" id="rv-srow-${i}" style="display:flex;gap:12px;align-items:flex-start">
+        <div style="margin-top:2px;flex-shrink:0">
+          <input type="checkbox" id="rv-chk-${i}" onclick="event.stopPropagation()" onchange="toggleStudySel(${i},document.getElementById('rv-srow-${i}'))" style="width:16px;height:16px;cursor:pointer">
+        </div>
+        <div style="flex:1">
+          <div class="row-between">
+            <span style="font-size:13px;font-weight:600">${esc(s.topic)}</span>
+            ${due>0?`<span class="badge easy">${due} pendientes</span>`:'<span class="badge muted">al día</span>'}
+          </div>
+          <div style="font-size:11px;color:var(--text-3);margin-top:3px">${esc(s.subject)} · ${esc(s.name)} · ${s.cards?.length||0} cartas · Acierto: ${pct}%</div>
+          <div style="font-size:11px;color:var(--text-3);margin-top:1px">Último repaso: ${last}</div>
+        </div>
+      </div>`;
+    }).join('')}`;
+}
+
+function toggleStudySel(i, row){
+  const chk=document.getElementById('rv-chk-'+i);
+  chk.checked=!chk.checked;
+  row.style.background=chk.checked?'var(--accent-bg)':'var(--surface)';
+  row.style.borderColor=chk.checked?'var(--accent)':'var(--border)';
+}
+
+function selectAllStudies(){
+  G.studies.forEach((_,i)=>{
+    const chk=document.getElementById('rv-chk-'+i);
+    const row=document.getElementById('rv-srow-'+i);
+    if(chk){chk.checked=true;row.style.background='var(--accent-bg)';row.style.borderColor='var(--accent)';}
+  });
+}
+
+function startRevSelected(){
+  const selected=G.studies.filter((_,i)=>{
+    const chk=document.getElementById('rv-chk-'+i);
+    return chk&&chk.checked;
+  });
+  if(!selected.length){notify('Selecciona al menos un estudio',true);return;}
+  // Combinar todas las cards de los estudios seleccionados
+  const now=Date.now();
+  let q=[];
+  selected.forEach(s=>{
+    const due=s.cards?.filter(c=>c.nextReview<=now)||[];
+    if(due.length) q=[...q,...due.map(c=>({...c,_study:s}))];
+    else q=[...q,...(s.cards||[]).map(c=>({...c,_study:s}))];
+  });
+  if(!q.length){notify('No hay cartas para repasar',true);return;}
+  q.sort(()=>Math.random()-0.5);
+  G.revQueue=q;G.revIdx=0;G.revStudy=selected[0];G.revC=0;G.revW=0;G.revAnswered=false;
+  G.revMulti=selected;
+  document.getElementById('rv-sel').style.display='none';
+  document.getElementById('rv-active').style.display='block';
+  document.getElementById('rv-done').style.display='none';
+  const topics=selected.map(s=>s.topic).join(' + ');
+  document.getElementById('rv-title').textContent=topics;
+  showCard();
 }
 
 function startRev(idx){
@@ -1102,7 +1271,7 @@ function startRev(idx){
   const now=Date.now();
   let q=s.cards.filter(c=>c.nextReview<=now);
   if(!q.length)q=[...s.cards];
-  q.sort((a,b)=>{const o={easy:0,medium:1,hard:2};return(o[a.difficulty]||0)-(o[b.difficulty]||0);});
+  q.sort(()=>Math.random()-0.5);
   G.revQueue=[...q];G.revIdx=0;G.revStudy=s;G.revC=0;G.revW=0;G.revAnswered=false;
   document.getElementById('rv-sel').style.display='none';
   document.getElementById('rv-active').style.display='block';
@@ -1150,7 +1319,8 @@ async function reviewRate(rating){const c=G.revQueue[G.revIdx];await applyReview
 
 async function applyReview(rating,c){
   const now=Date.now();const day=86400000;
-  const sc=G.revStudy.cards.find(x=>x.id===c.id);if(!sc)return;
+  const study=c._study||G.revStudy;
+  const sc=study.cards?.find(x=>x.id===c.id);if(!sc)return;
   if(rating==='bien'){
     sc.timesCorrect=(sc.timesCorrect||0)+1;
     sc.nextReview=now+(G.revStudy.interval*Math.min(sc.timesCorrect,4)*day);
@@ -1166,7 +1336,7 @@ async function applyReview(rating,c){
     sc.nextReview=now+(G.revStudy.interval*day);
     G.revW++;
   }
-  await saveStudyDB(G.revStudy);
+  await saveStudyDB(study);
 }
 
 function nextCard(){
