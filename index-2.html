@@ -241,7 +241,10 @@ hr{border:none;border-top:1px solid var(--border);margin:12px 0}
         <div><label>Nombre</label><input id="p-name" placeholder="Tu nombre" autocomplete="off"></div>
         <div><label>Asignatura</label><input id="p-subj" placeholder="Ej: Psicofarmacología" autocomplete="off"></div>
       </div>
-      <label>Tema</label><input id="p-topic" placeholder="Ej: Antidepresivos ISRS" autocomplete="off">
+      <div class="grid2">
+        <div><label>Tema</label><input id="p-topic" placeholder="Ej: Antidepresivos ISRS" autocomplete="off"></div>
+        <div><label>Subtema</label><input id="p-subtopic" placeholder="Ej: Mecanismo de acción" autocomplete="off"></div>
+      </div>
       <label>API Key de Anthropic</label>
       <input id="p-apikey" type="password" placeholder="sk-ant-..." autocomplete="off">
       <p style="font-size:11px;color:var(--text-3);margin-top:4px">Tu API key se guarda solo en este navegador. Obtenerla en: console.anthropic.com/settings/keys</p>
@@ -492,13 +495,15 @@ async function loadStudies(){
     if(!m||!Object.keys(m).length){m={m0:row.modules?.m0,m1a:row.modules?.m1a,m1b:row.modules?.m1b,m2:row.modules?.m2,m3:row.modules?.m3,m4:row.modules?.m4,m5:row.modules?.m5,m8:row.modules?.m8};}
     return{...row,modules:m||{},cards:(c&&c.length?c:row.cards)||[]};
   });
+  const prevId=G.cur?.id;
   G.cur=G.studies[0]||null;
+  if(prevId){const prev=G.studies.find(s=>s.id===prevId);if(prev)G.cur=prev;}
   if(G.cur)renderSyn();
   refreshHome();renderRevSel();renderDB();
 }
 async function saveStudyDB(study){
   const payload={
-    id:study.id,user_id:G.uid,name:study.name,subject:study.subject,topic:study.topic,
+    id:study.id,user_id:G.uid,name:study.name,subject:study.subject,topic:study.topic,subtopic:study.subtopic||'',
     interval:study.interval,created_at:study.created_at,
     modules_data:JSON.stringify(study.modules||{}),
     cards_data:JSON.stringify(study.cards||[]),
@@ -967,6 +972,7 @@ async function startAnalysis(){
   const name=document.getElementById('p-name').value.trim();
   const subj=document.getElementById('p-subj').value.trim();
   const topic=document.getElementById('p-topic').value.trim();
+  const subtopic=document.getElementById('p-subtopic').value.trim();
   const err=document.getElementById('p-err');err.style.display='none';
 
   let doc='';const isPdf=G.isPdf;const pdfB64=G.pdfB64;
@@ -983,13 +989,13 @@ async function startAnalysis(){
   document.getElementById('proc-prog').style.display='block';
   stepStates={};
 
-  const study={id:String(Date.now()),name,subject:subj,topic,interval:G.intv,
+  const study={id:String(Date.now()),name,subject:subj,topic,subtopic,interval:G.intv,
                created_at:new Date().toISOString(),cards:[],modules:{},svgData:null,history:[],
                status:'pending'};
 
   // Guardar estudio en Supabase con el documento para que lo procese el servidor
   const payload={
-    id:study.id,user_id:G.uid,name:study.name,subject:study.subject,topic:study.topic,
+    id:study.id,user_id:G.uid,name:study.name,subject:study.subject,topic:study.topic,subtopic:study.subtopic||'',
     interval:study.interval,created_at:study.created_at,
     modules_data:'{}',cards_data:'[]',svg_data:'',history:[],
     status:'pending',
@@ -1037,13 +1043,16 @@ async function startAnalysis(){
     if(data.status==='done'){
       clearInterval(poll);
       await loadStudies();
+      // Asegurar que G.cur apunta al estudio recién procesado
+      const updated=G.studies.find(s=>s.id===study.id);
+      if(updated)G.cur=updated;
       document.getElementById('proc-prog').style.display='none';
       document.getElementById('btn-go').disabled=false;
       document.getElementById('p-doc').value='';
       G.extractedText='';G.isPdf=false;G.pdfB64='';
       const fn=document.getElementById('file-name');if(fn)fn.style.display='none';
-      refreshHome();renderSyn();
-      notify('✓ Estudio completado: '+study.cards.length+' flashcards generadas');
+      refreshHome();renderSyn();renderFlash();
+      notify('✓ Estudio completado: '+(G.cur?.cards?.length||0)+' flashcards generadas');
     } else if(data.status==='error'){
       clearInterval(poll);
       document.getElementById('proc-prog').style.display='none';
@@ -1066,7 +1075,7 @@ function renderSyn(){
   document.getElementById('syn-body').style.display=s?'block':'none';
   if(!s)return;
   document.getElementById('syn-topic').textContent=s.topic;
-  document.getElementById('syn-sub').textContent=s.subject+' · '+s.name;
+  document.getElementById('syn-sub').textContent=s.subject+' · '+s.name+(s.subtopic?' · '+s.subtopic:'');
   const mods=[
     {k:'m1a',t:'Módulo 1 — Resumen ejecutivo',type:'md'},
     {k:'m1b',t:'Módulo 2 — Resumen con definiciones integradas',type:'md'},
