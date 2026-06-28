@@ -26,7 +26,7 @@ body.dark{
   --warning:#f59e0b;--warning-bg:#1c1400;
   --danger:#ef4444;--danger-bg:#1f0808;
 }
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;min-height:100vh;transition:background 0.2s,color 0.2s}
+body{font-family:Tahoma,Geneva,sans-serif;background:var(--bg);color:var(--text);font-size:12px;line-height:1.6;min-height:100vh;transition:background 0.2s,color 0.2s}
 .app{max-width:900px;margin:0 auto;padding:0 16px 60px}
 .header{padding:20px 0 0}
 .nav{display:flex;gap:2px;border-bottom:1px solid var(--border);margin:16px 0 24px;overflow-x:auto}
@@ -85,13 +85,15 @@ textarea{min-height:140px;resize:vertical}
 .srow{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:11px 14px;margin-bottom:6px;cursor:pointer;transition:all 0.15s}
 .srow:hover{border-color:var(--accent);background:var(--accent-bg)}
 .module-title{font-size:15px;font-weight:600;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid var(--border);color:var(--accent-text)}
-.prose{font-size:13px;line-height:1.9;color:var(--text-2);word-break:break-word}
-.prose p{margin-bottom:8px}
-.prose ul{margin:8px 0 8px 20px}
+.prose{font-size:12px;line-height:1.9;color:var(--text-2);word-break:break-word;font-family:Tahoma,Geneva,sans-serif}
+.prose p{margin-bottom:8px;text-indent:1em}
+.prose ul{margin:8px 0 8px 24px}
+.prose ul ul{margin-left:24px}
+.prose ul ul ul{margin-left:24px}
 .prose li{margin-bottom:4px}
 .prose table{width:100%;border-collapse:collapse;margin:10px 0;font-size:12px}
-.prose th{background:var(--surface2);padding:7px 10px;text-align:left;border:1px solid var(--border);font-weight:600}
-.prose td{padding:7px 10px;border:1px solid var(--border);vertical-align:top}
+.prose th{background:var(--surface2);padding:7px 10px;text-align:left;border:1px solid var(--border);font-weight:600;font-family:Tahoma,Geneva,sans-serif}
+.prose td{padding:7px 10px;border:1px solid var(--border);vertical-align:top;font-family:Tahoma,Geneva,sans-serif}
 .fund{color:#dc2626;font-weight:700}
 .imp{color:#2563eb;font-weight:700}
 .vis-area{border:1px solid var(--border);border-radius:12px;padding:16px;overflow:auto;min-height:400px;background:var(--surface)}
@@ -280,7 +282,8 @@ hr{border:none;border-top:1px solid var(--border);margin:12px 0}
           <div id="proc-pct" style="font-size:11px;color:var(--text-3);text-align:right;margin-top:4px">0%</div>
         </div>
         <div id="steps-list"></div>
-        <div style="margin-top:10px;font-size:12px;color:var(--text-3)">Esto puede tardar 60-120 segundos...</div>
+        <div style="margin-top:10px;font-size:12px;color:var(--text-3)">Esto puede tardar 60-120 segundos... Puedes cerrar esta pestaña y volver más tarde.</div>
+        <button class="btn sm" style="margin-top:12px" onclick="loadStudies().then(()=>renderSyn())">🔄 Actualizar ahora</button>
       </div>
     </div>
   </div>
@@ -490,6 +493,7 @@ async function loadStudies(){
     return{...row,modules:m||{},cards:(c&&c.length?c:row.cards)||[]};
   });
   G.cur=G.studies[0]||null;
+  if(G.cur)renderSyn();
   refreshHome();renderRevSel();renderDB();
 }
 async function saveStudyDB(study){
